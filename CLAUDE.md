@@ -166,7 +166,7 @@ Each is (or should be) a card on the Virta board, project `tosijs-pattern`.
 - **GitHub: public.** The owner creates the repo and the DNS.
 - **The site's domain is `pattern.tosijs.net`** (as in the site config).
 - **Replacement templates insert the matched TEXT of a capture**, not its typed value:
-  `replaceAll('$3.50', '{amount} USD')` must give `3.50 USD` (today it gives `3.5 USD`). The
+  `replaceAll('$3.50', '{amount} USD')` gives `3.50 USD`, not `3.5 USD`. The
   function form sees both (`m.captures` are values, `m.texts` the text). Done (#3756).
 
 ## Open decisions (the owner's)
