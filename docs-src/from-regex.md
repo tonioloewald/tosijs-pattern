@@ -2,8 +2,31 @@
 
 # From regex
 
-**Status: designed, not built.** This page is the plan for `fromRegex()`, the translator, and
-the rule that makes it useful: **a regex that does not translate is refused, with the reason.**
+**Status: built (2026-11-03).** `fromRegex()` translates a regex where it can prove the result
+is equivalent, and otherwise **refuses it, with the reason**. Over tjs-lang's own source, **67%
+of regexes translate, and every translation agrees with its regex** on generated inputs; the
+largest refusal is not backtracking but looking behind (`\b`, multiline `^`, lookbehind: 21%).
+The numbers are in `reports/from-regex-2026-11-03.md`.
+
+```js
+import { fromRegex } from 'tosijs-pattern'
+import { show } from 'tosijs-pattern/demo'
+
+const version = fromRegex(/^v(?<major>\d+)\.(?<minor>\d+)$/)
+let refusal
+try {
+  fromRegex(/\d+5/)
+} catch (e) {
+  refusal = `${e.code}: ${e.message}`
+}
+show(preview, version.describe(), version.parse('v2.13').captures, refusal)
+```
+
+A translation has the regex's SEARCH semantics (`find`, `findAll`, `replaceAll`, …). Unnamed
+groups capture as `$1`, `$2`; named groups by name. A refusal is a `RegexRefusal` with a stable
+`code`, the offset `at` in the source, and a `suggestion`. Pattern reads code points, so a regex
+WITHOUT the `u` flag (which reads UTF-16 units) can differ on characters beyond the BMP, and
+nowhere else.
 
 People, and language models especially, write regex fluently. So the plan is to keep accepting
 regex as INPUT while only ever running Pattern. A host (the tjs-lang AsyncJS VM is the first)
@@ -53,7 +76,18 @@ and refuses when it cannot. The proof is a local check:
 | `y` flag | `find` at a position | |
 | `u` flag | always on: code points | |
 
-## How much will translate? Measure, do not guess
+## What it found
+
+| Corpus | Regexes | Translated (all agree) | Refused: looks behind | Refused: backtracking | Other |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| tjs-lang's source | 916 | 67.1% | 20.9% | 11.1% | 0.9% |
+| a large `node_modules` | 5,372 | 53.2% | 26.3% | 16.1% | 4.4% |
+
+"Looks behind" is `\b`, `^` with the `m` flag, and lookbehind: each asks about the character
+BEFORE the position, which Pattern cannot yet. A `precededBy` piece would recover most of it;
+that is the next decision.
+
+## How much will translate? The plan, before measuring
 
 A census of the 7,926 distinct regex literals in a large `node_modules` (2026-11-02; mostly
 developer tooling, so lexer-heavy) found: quantifiers in 76%, character classes 60%,

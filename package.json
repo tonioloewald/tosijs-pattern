@@ -48,6 +48,8 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "acorn": "^8.19.0",
+    "acorn-walk": "^8.3.5",
     "chokidar": "^4.0.3",
     "happy-dom": "^21.0.4",
     "marked": "^18.0.0",

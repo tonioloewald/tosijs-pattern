@@ -64,13 +64,14 @@ The goals, as the owner stated them (2026-11-03), and the cards that serve each:
 ## Commands
 
 ```sh
-bun test                                   # the suite (59 tests)
+bun test                                   # the suite (116 tests)
 bunx tsc --noEmit                          # typecheck
 bun scripts/run-examples.ts README.md docs-src/*.md   # run every live example (stub preview)
 bun bin/site.ts --build                    # build the doc site (docs/) and the library (dist/)
 bun bin/site.ts                            # build, then the dev server (needs `bunx tosijs-dev-certs` once: mkcert)
 bun scripts/regex-census.ts [dir]          # what regexes in a JS tree use (read-only)
 bun scripts/bench.ts                       # Pattern vs native RegExp vs tjs-lang's linear engine
+bun scripts/from-regex-report.ts <dir>     # what share of a tree's regexes fromRegex translates, refusals ranked
 ```
 
 To check the live examples in a real browser without the dev server: serve `docs/` statically
@@ -88,11 +89,13 @@ To check the live examples in a real browser without the dev server: serve `docs
 | `src/pattern.ts` | The vocabulary (nouns and verbs) and the `Pattern` object's operations |
 | `src/describe.ts` | `describe()`: a pattern read aloud |
 | `src/json.ts` | `fromJSON`: validated reading of untrusted JSON |
+| `src/regex/` | `fromRegex`: `parse.ts` reads regex syntax (loops, no RegExp), `translate.ts` proves equivalence or refuses |
 | `src/pattern.test.ts` | Tests, including the regex differential corpus |
 | `docs-src/` | Guide pages for the doc site. `docs/` is the BUILD OUTPUT (GitHub Pages) |
 | `demo/site.ts` | The site's bundle: registers the doc system, exposes the library to examples |
 | `bin/site.ts`, `tosijs-pattern-site.config.ts` | The site and library build (tosijs-ui/site) |
-| `scripts/` | `bench.ts` (vs native and tjs-lang's engine), `regex-census.ts`, `run-examples.ts` |
+| `scripts/` | `bench.ts`, `regex-census.ts`, `run-examples.ts`, `regex-diff.ts` (the differential oracle), `from-regex-report.ts` |
+| `reports/` | Measurements, dated: `from-regex-2026-11-03.md` |
 
 **Reviews go in `reviews/` at the repo root, never `docs/reviews/`:** `docs/` is the generated
 site, wiped on each build and served publicly.
@@ -106,7 +109,10 @@ Built and verified:
   `separatedBy`, `number`, `integer`).
 - Operations: `matches`, `parse` (with line/column errors), `find`, `findAll`, `occursIn`,
   `replaceFirst`, `replaceAll`, `split`, `describe`, `toJSON` / `fromJSON`.
-- 59 tests. A guard test fails if a node kind is missing from the engine, `describe` or
+- `fromRegex()`: translates where it can prove equivalence, refuses the rest with a coded reason.
+  67% of tjs-lang's regexes translate (53% of a large `node_modules`), every one agreeing with its
+  regex on generated inputs; the check was mutation-checked (`reports/from-regex-2026-11-03.md`).
+- 116 tests. A guard test fails if a node kind is missing from the engine, `describe` or
   `fromJSON`. The semantics tests were mutation-checked: making repetition give back, or `oneOf`
   take the longest, turns 10 red. A differential corpus compares patterns with the regex a
   fluent engineer would write.
@@ -118,14 +124,13 @@ Not done: everything under "Work, in order".
 
 Each is (or should be) a card on the Virta board, project `tosijs-pattern`.
 
-1. **The translator, `fromRegex()`, and the refusal rule** (`docs-src/from-regex.md`). Accept a
-   regex, translate it where possessive/ordered semantics provably agree, name the structure
-   where backtracking stood in for one (`.*?X` → `until(X)`), and refuse the rest with a reason
-   and a suggestion. Its first deliverable is a REPORT over a corpus: what share translates, and
-   the refusal reasons ranked. Every translation is checked differentially against the regex on
-   generated inputs. This is the owner's question of 2026-11-02 ("to what extent could we provide
-   a regex to our translator and simply refuse to run regexes that don't translate?"); answer it
-   with numbers.
+1. **The translator, `fromRegex()`: built (#3748).** Report: `reports/from-regex-2026-11-03.md`.
+   Next, by measured value: (a) **look-behind** (`\b`, multiline `^`, lookbehind) is 21-26% of
+   all regexes and the largest refusal; a `precededBy` node would recover most of it, and is the
+   OWNER's decision (a new node kind); (b) recognise structure where backtracking stood in for it
+   (`"(?:[^"\\]|\\.)*"` → `quoted`, `[^,]*(?:,[^,]*)*` → `separatedBy`), which also makes the
+   output read better; (c) provably-safe reordering of overlapping alternations; (d) the third
+   corpus, regexes models write (#3749).
 2. **Hone the API by measuring it: obviousness, legibility, writability, readability, economy**
    (the owner's five, 2026-11-03). Grokkability probes, as tjs-lang runs them
    (`../tjs-lang/experiments/agent-legibility/`): show a model a pattern and ask what it

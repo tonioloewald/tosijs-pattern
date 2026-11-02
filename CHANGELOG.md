@@ -9,6 +9,11 @@
   backtracking and a step budget, `describe()` (a pattern read aloud), validated
   `toJSON`/`fromJSON`, and the operations `matches`, `parse`, `find`, `findAll`, `occursIn`,
   `replaceFirst`, `replaceAll`, `split`.
+- `fromRegex()`: a regex in, an equivalent pattern out, or a `RegexRefusal` with a coded reason,
+  the place in the source, and what to write instead. It translates only where it can prove that
+  possessive repetition and ordered choice give the regex's answer, and turns a lazy `C*?` before
+  the end of the regex into `until`. Over tjs-lang's source 67% of regexes translate and every one
+  agrees with its regex on generated inputs.
 - Every capture keeps its matched text as well as its value (`texts` on a match and a parse
   result). Replacement templates insert the text: `$3.50` → `'{amount} USD'` gives `3.50 USD`.
 - Two more captures that were silently lost are now errors that say what to write: a name

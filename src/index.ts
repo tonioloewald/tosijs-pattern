@@ -51,3 +51,4 @@ export {
 export type { Piece, Options, Match, ParseResult, ParseError } from './pattern'
 export type { Node, Kind, Ranges } from './nodes'
 export { fromJSON } from './json'
+export { fromRegex, RegexRefusal, type RefusalCode } from './regex'

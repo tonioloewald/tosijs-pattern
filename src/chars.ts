@@ -107,3 +107,42 @@ export function isIdentifier(name: string): boolean {
   }
   return true
 }
+
+export const MAX_CODE_POINT = 0x10ffff
+
+/** Every code point in either set. */
+export function union(a: Ranges, b: Ranges): Ranges {
+  return normalize([...a, ...b])
+}
+
+/** Every code point NOT in the set. */
+export function complement(ranges: Ranges): Ranges {
+  const out: Ranges = []
+  let next = 0
+  for (const [a, b] of normalize(ranges)) {
+    if (a > next) out.push([next, a - 1])
+    next = b + 1
+  }
+  if (next <= MAX_CODE_POINT) out.push([next, MAX_CODE_POINT])
+  return out
+}
+
+/** Every code point in both sets. */
+export function intersect(a: Ranges, b: Ranges): Ranges {
+  const x = normalize(a)
+  const y = normalize(b)
+  const out: Ranges = []
+  let i = 0
+  let j = 0
+  while (i < x.length && j < y.length) {
+    const lo = Math.max(x[i]![0], y[j]![0])
+    const hi = Math.min(x[i]![1], y[j]![1])
+    if (lo <= hi) out.push([lo, hi])
+    if (x[i]![1] < y[j]![1]) i++
+    else j++
+  }
+  return out
+}
+
+export const sameRanges = (a: Ranges, b: Ranges): boolean =>
+  a.length === b.length && a.every((r, i) => r[0] === b[i]![0] && r[1] === b[i]![1])
