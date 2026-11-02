@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+*.tgz
+.DS_Store
+.site
+.site-static
+docs
+demo/docs.json

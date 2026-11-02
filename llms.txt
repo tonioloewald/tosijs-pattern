@@ -1,0 +1,13 @@
+# tosijs-pattern
+
+> Matching that reads like what it means: a fluent, declarative alternative to regular
+> expressions. Plain strings are literal text; nouns are characters (`digit`, `letter`,
+> `charIn('a-z')`); verbs combine (`sequence`, `oneOf`, `oneOrMore`, `optional`, `capture`).
+> No backtracking (possessive repetition, ordered choice), a step budget on every call, no
+> RegExp inside, and patterns are validated JSON data.
+
+- [README.md](README.md): the tour, with a regex-to-Pattern table.
+- [docs-src/vocabulary.md](docs-src/vocabulary.md): every noun, verb and structural piece.
+- [docs-src/from-regex.md](docs-src/from-regex.md): the planned translator, and why some regexes are refused.
+- [DECISIONS.md](DECISIONS.md): semantics and why (read before assuming regex behaviour).
+- [CLAUDE.md](CLAUDE.md): working in this repo.

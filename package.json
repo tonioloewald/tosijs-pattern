@@ -1,0 +1,59 @@
+{
+  "name": "tosijs-pattern",
+  "version": "0.1.0-dev",
+  "description": "Matching that reads like what it means: a fluent, declarative alternative to regular expressions, with no backtracking, a step budget, and the structure regex cannot express (quoted, balanced, separated lists).",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "bun": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "license": "MIT",
+  "keywords": [
+    "pattern",
+    "regex",
+    "regular-expression",
+    "parser",
+    "peg",
+    "matching",
+    "search",
+    "replace"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tonioloewald/tosijs-pattern.git"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "CHANGELOG.md",
+    "llms.txt",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit",
+    "start": "bun bin/site.ts",
+    "build": "bun bin/site.ts --build",
+    "check-bun": "node -e \"const w=require('fs').readFileSync('.bun-version','utf8').trim(),h=process.versions.bun||require('child_process').execSync('bun --version').toString().trim();if(w!==h){console.error('Bun '+h+' but .bun-version pins '+w);process.exit(1)}\""
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "chokidar": "^4.0.3",
+    "happy-dom": "^21.0.4",
+    "marked": "^18.0.0",
+    "tjs-lang": "0.14.0-rc.10",
+    "tosijs": "^1.10.10",
+    "tosijs-schema": "^1.14.0",
+    "tosijs-ui": "^1.16.41",
+    "typescript": "^5"
+  }
+}
