@@ -154,7 +154,7 @@ export class Pattern {
   find(input: string, options: Options & { from?: number } = {}): Match | null {
     this.#check()
     const ctx = context(input, options.maxSteps ?? DEFAULT_MAX_STEPS)
-    for (let at = options.from ?? 0; at <= input.length; at++) {
+    for (let at = options.from ?? 0; at <= input.length; at = nextStart(input, at)) {
       const hit = match(this.node, ctx, at)
       if (hit)
         return {
@@ -177,7 +177,7 @@ export class Pattern {
     for (let at = 0; at <= input.length; ) {
       const hit = match(this.node, ctx, at)
       if (!hit) {
-        at++
+        at = nextStart(input, at)
         continue
       }
       out.push({
@@ -188,7 +188,7 @@ export class Pattern {
         texts: hit.texts ?? {},
         value: hit.value,
       })
-      at = hit.end > at ? hit.end : at + 1
+      at = hit.end > at ? hit.end : nextStart(input, at)
     }
     return out
   }
@@ -273,6 +273,9 @@ export class Pattern {
     this.#checked = true
   }
 }
+
+/** The next place a search may start: one whole code point on, never inside a surrogate pair. */
+const nextStart = (input: string, at: number) => at + ((input.codePointAt(at) ?? 0) > 0xffff ? 2 : 1)
 
 /** Freeze a node and everything in it, so a pattern is a value nobody can change underneath you. */
 function freezeNode<T>(x: T): T {

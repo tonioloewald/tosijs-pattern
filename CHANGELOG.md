@@ -14,4 +14,7 @@
 - Two more captures that were silently lost are now errors that say what to write: a name
   recorded twice in one scope (the second overwrote the first), and a capture inside
   `until()`'s stopping point.
+- `find`, `findAll` (and so `replaceAll`, `split`, `occursIn`) step one whole code point at a
+  time: they no longer try a match in the middle of a surrogate pair. Found by `fromRegex`'s
+  differential check on `/[\uD800-\uDFFF]/u`.
 - A doc site (tosijs-ui) whose examples run live in the page.

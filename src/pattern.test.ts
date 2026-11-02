@@ -215,6 +215,13 @@ group('operations', () => {
     if (!r2.ok) expect(r2.error.message).toBe('expected an identifier at line 1, column 1')
   })
 
+  it('find and findAll step by whole code points, never into the middle of an emoji', () => {
+    const lowHalf = charIn('\udc00-\udfff')
+    expect(lowHalf.find('😀')).toBeNull()
+    expect(lowHalf.findAll('a😀b')).toEqual([])
+    expect(zeroOrMore('x').findAll('😀').map((m) => m.start)).toEqual([0, 2])
+  })
+
   it('lineStart / lineEnd', () => {
     const line = sequence(lineStart, capture('l', oneOrMore(letter)), lineEnd)
     expect(line.findAll('ab\ncd\n9').map((m) => m.captures.l)).toEqual(['ab', 'cd'])
