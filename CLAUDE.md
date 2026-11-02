@@ -140,13 +140,17 @@ Each is (or should be) a card on the Virta board, project `tosijs-pattern`.
    throwaway worktree, as tjs-lang's `bin/deploy-site.ts` does, rather than committing build
    output to `main`.
 
+## Decided by the owner (2026-11-03)
+
+- **GitHub: public.** The owner creates the repo and the DNS.
+- **The site's domain is `pattern.tosijs.net`** (as in the site config).
+- **Replacement templates insert the matched TEXT of a capture**, not its typed value:
+  `replaceAll('$3.50', '{amount} USD')` must give `3.50 USD` (today it gives `3.5 USD`). The
+  function form keeps access to both (the `Match`'s captures are values; add the texts).
+  Not yet implemented: do it first, with a test row for exactly this case.
+
 ## Open decisions (the owner's)
 
-- **The site's domain** (`baseUrl` in the site config says `pattern.tosijs.net`, unconfirmed).
-- **Replacement templates: typed value or matched text?** `replaceAll('$3.50', '{amount} USD')`
-  gives `3.5 USD`, because `{amount}` inserts the capture's VALUE (a number). For replacement the
-  matched text is almost certainly what people mean. Probably: templates insert text; the
-  function form gets both.
 - **Names**, to be measured, not argued: `separatedBy`, `describedAs`, `occursIn`, `caseless`,
   `matches` vs `parse`, `until`, `oneOf` (ordered; should it be `firstOf`?), and whether nouns
   should be plural-aware (`oneOrMore(digits)`?).
