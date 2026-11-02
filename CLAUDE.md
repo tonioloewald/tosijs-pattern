@@ -19,6 +19,19 @@ compiler, and in agents' code edits. The decision to make it a standalone, zero-
 library with a code-editing skill is the owner's (2026-10-03, tjs-lang board #2813). Where that
 doc and this repo differ, this repo is current.
 
+The goals, as the owner stated them (2026-11-03), and the cards that serve each:
+
+1. **A powerful, intuitive and safe tool for parsing text**: the classic cases where, using a
+   regex, you now have two problems. Safety: no backtracking, the step budget, validated JSON;
+   linearity is #3750. Power: `quoted`, `balanced`, `separatedBy`, values; the CSV showcase is
+   #3761. NOT covered yet: recursive grammars (a rule that refers to itself, for JSON,
+   expressions, nested structure beyond `balanced`). Open question for the owner.
+2. **Grokkable**: an agent reading code that uses Pattern, WITHOUT documentation, infers what it
+   does. Measured, cold (no docs in the prompt), by the READ probes: #3758, #3749.
+3. **Author (safe) regexes**: emit possessive native regexes for the regular subset, #3760.
+4. **Ingest regexes**: a translator (#3748) turns them into safer patterns AND explains them
+   (`describe()`, a railroad diagram, or the precise reason one is refused), #3759.
+
 ## Read before changing anything
 
 1. `README.md`: the user-facing tour (and the doc site's home page).
