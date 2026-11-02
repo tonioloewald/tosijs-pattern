@@ -7,3 +7,4 @@ coverage
 .site-static
 docs
 demo/docs.json
+/.practices/

@@ -3,6 +3,7 @@ The one build entry, a thin wrapper over tosijs-ui/site (the same shape as tosij
 
   bun bin/site.ts            # build the site and the library, then start the dev server
   bun bin/site.ts --build    # build and exit (0/1)
+  bun bin/site.ts --lib      # build only the library (dist/), what npm ships, and exit
 
 `buildSite` writes the doc site to docs/ (served by GitHub Pages). `buildLibrary` writes the
 npm artefacts to dist/. Everything shells out to `bun build` rather than calling Bun.build()
@@ -26,6 +27,11 @@ async function buildLibrary(): Promise<void> {
 const buildAll = async (): Promise<void> => {
   if (!(await buildSite(siteConfig))) throw new Error('site build failed')
   await buildLibrary()
+}
+
+if (process.argv.includes('--lib')) {
+  await buildLibrary()
+  process.exit(0)
 }
 
 await buildAll().catch((e) => {

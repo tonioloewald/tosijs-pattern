@@ -43,6 +43,7 @@
     "typecheck": "bunx tsc --noEmit",
     "start": "bun bin/site.ts",
     "build": "bun bin/site.ts --build",
+    "build:lib": "bun bin/site.ts --lib",
     "check-bun": "node -e \"const w=require('fs').readFileSync('.bun-version','utf8').trim(),h=process.versions.bun||require('child_process').execSync('bun --version').toString().trim();if(w!==h){console.error('Bun '+h+' but .bun-version pins '+w);process.exit(1)}\""
   },
   "devDependencies": {
@@ -55,5 +56,11 @@
     "tosijs-schema": "^1.14.0",
     "tosijs-ui": "^1.16.41",
     "typescript": "^5"
+  },
+  "releaseDoctor": {
+    "build": "build:lib",
+    "securityEntries": [
+      "src/index.ts"
+    ]
   }
 }
