@@ -23,6 +23,8 @@ don't clobber each other; the `iframe` attribute isolates DOM/CSS, not state.
 
 ## Pages
 
+- https://pattern.tosijs.net/formal/ — A formal specification in Lean 4
+  tjs-lang's AsyncJS VM (`../tjs-lang/docs/ajs-lean-spec.md`) applies to Pattern too. Pattern should
 - https://pattern.tosijs.net/from-regex/ — From regex
   the rule that makes it useful: **a regex that does not translate is refused, with the reason.**
 - https://pattern.tosijs.net/performance/ — Performance

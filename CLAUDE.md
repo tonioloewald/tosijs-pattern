@@ -120,12 +120,18 @@ Each is (or should be) a card on the Virta board, project `tosijs-pattern`.
    contested name, A/B the spelling. Small and large models, N samples, the WRONG column decides.
    Economy is measured too: tokens per pattern against the equivalent regex. Every vocabulary
    change cites a probe.
-3. **What agents need.** Use tjs-lang's grokkability harness (`../tjs-lang`,
+3. **A formal specification in Lean 4** (`docs-src/formal.md`; owner, 2026-11-03). Lean holds the
+   semantics and the proofs (totality, determinism, the step bound, captures never lost, JSON
+   round-trip; later the translator's and the emitter's soundness), the TypeScript engine is
+   tested against it differentially over the same JSON patterns. Pattern goes before tjs-lang's
+   AsyncJS VM spike: smaller, pure, and a component of it. For regex semantics, Warblre (an
+   executable Rocq mechanization of ECMAScript regexes) serves as the ORACLE first.
+4. **What agents need.** Use tjs-lang's grokkability harness (`../tjs-lang`,
    `experiments/agent-legibility/` and `bun run test:grok`) to collect the regexes small and
    large models write for typical agent string tasks, and to measure whether they can READ and
    WRITE Pattern (the read-aloud claim, tested). Those probes are the method for every naming
    question.
-4. **Linearity and speed.** `find`/`findAll` try every start position, and `until` scans ahead
+5. **Linearity and speed.** `find`/`findAll` try every start position, and `until` scans ahead
    from each, so some shapes are quadratic: add packrat memoisation (or a smarter scan) and
    work-counting tests that fail on super-linear growth. Then the low-hanging fruit in
    `docs-src/performance.md` (lazy values, no per-node allocation, a first-set prefilter for
@@ -133,22 +139,22 @@ Each is (or should be) a card on the Virta board, project `tosijs-pattern`.
    regex, and level with or faster than tjs-lang's own linear engine (`bun scripts/bench.ts`).
    Later, Pattern can EMIT possessive native regexes as a fast path in trusted host code (same
    page). That needs a differential test and a ReDoS probe per engine first.
-5. **Code mode, the CLI and the editing skill.** Whitespace and comments skipped between tokens;
+6. **Code mode, the CLI and the editing skill.** Whitespace and comments skipped between tokens;
    `balanced`/`quoted` that understand a host language's strings, template literals and
    comments; a CLI (`tosijs-pattern replace <file> …`) with edit safety (require a unique match
    or a stated count; dry run showing each match in context); a SKILL.md agents use to edit code
    in every repo. Measure: edits that apply on the first try.
-6. **Dogfood in tjs-lang**, first target: the six hand-rolled quote scanners in
+7. **Dogfood in tjs-lang**, first target: the six hand-rolled quote scanners in
    `../tjs-lang/src/lang/parser-params.ts` (tjs-lang board #2877), each replacement held
    byte-identical over tjs-lang's dogfood and compat corpora. Then tjs-lang's ~350 compiler
    regex sites, a pass at a time. File in tjs-lang (`virta create … --project tjs-lang`); do not
    edit tjs-lang from here.
-7. **Unicode.** `letter` is ASCII. Unicode letters need the Unicode tables as DATA (generated,
+8. **Unicode.** `letter` is ASCII. Unicode letters need the Unicode tables as DATA (generated,
    with a freshness test), never `\p{L}`.
-8. **The AsyncJS builtin** (in tjs-lang, later): the engine runs with its steps charged as the
+9. **The AsyncJS builtin** (in tjs-lang, later): the engine runs with its steps charged as the
    VM's fuel; regex literals in AJS translate at compile time; untranslatable ones are compile
    errors. Gated in tjs-lang on the grokkability results.
-9. **Publish**: the shared OIDC workflow (`../tosijs-coding-practices/templates/publish.yml`),
+10. **Publish**: the shared OIDC workflow (`../tosijs-coding-practices/templates/publish.yml`),
    release-doctor, attestation; GitHub Pages for the site. `docs/` (the built site, 15 MB with
    tjs-lang's same-origin bundles) is gitignored, so deploy it to a `gh-pages` branch from a
    throwaway worktree, as tjs-lang's `bin/deploy-site.ts` does, rather than committing build
