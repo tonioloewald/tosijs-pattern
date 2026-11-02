@@ -99,6 +99,10 @@ show(
 )
 ```
 
+The values are numbers (`5`, `3.5`), but a template inserts each capture's matched TEXT, so
+`$3.50` becomes `3.50 USD`. A function replacement gets both: `m.captures` (values) and
+`m.texts` (the text as written).
+
 `find`, `findAll`, `occursIn`, `replaceFirst`, `replaceAll` (a `{name}` template or a function),
 `split`, `matches` (the whole string) and `parse` (the whole string, with an error that says
 where).

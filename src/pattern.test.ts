@@ -168,6 +168,20 @@ group('operations', () => {
     expect(sequence(',', zeroOrMore(whitespace)).split('a, b,c')).toEqual(['a', 'b', 'c'])
   })
 
+  it('a template inserts the matched TEXT of a capture, not its value (owner, 2026-11-03)', () => {
+    const price = sequence('$', capture('amount', number))
+    expect(price.replaceAll('$3.50', '{amount} USD')).toBe('3.50 USD')
+    expect(price.replaceAll('$1e3 and $0.10', '{amount}')).toBe('1e3 and 0.10')
+    // The function form has both: the value and the text.
+    const m = price.find('$3.50')!
+    expect([m.captures.amount, m.texts.amount]).toEqual([3.5, '3.50'])
+    expect(price.replaceAll('$3.50', (m) => `${(m.captures.amount as number) * 2} (${m.texts.amount}×2)`)).toBe('7 (3.50×2)')
+    // A quoted capture's text includes the quotes; its value is the inside.
+    const q = capture('s', quoted('"'))
+    expect(q.replaceAll('say "hi"', '<{s}>')).toBe('say <"hi">')
+    expect(q.parse('"hi"')).toMatchObject({ captures: { s: 'hi' }, texts: { s: '"hi"' } })
+  })
+
   it('parse says where and what it expected', () => {
     const date = sequence(times(4, digit), '-', times(2, digit))
     const r = date.parse('2026-1x')

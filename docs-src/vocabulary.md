@@ -84,5 +84,9 @@ const settings = capture('settings', oneOrMore(pair))
 show(preview, settings.parse('width=3;height=4').captures)
 ```
 
+Beside its value, every capture keeps the TEXT it matched, as written: `texts` on a parse
+result or a match. `{name}` in a replacement template inserts the text (so `$3.50` stays
+`3.50`, and a `quoted` capture keeps its quotes); a replacement function sees both.
+
 A capture that would be silently lost (inside a repetition nobody captures) is an error that
 says what to write instead.

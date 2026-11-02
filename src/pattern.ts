@@ -21,6 +21,7 @@ import {
   expectation,
   PatternBudgetError,
   type Captures,
+  type Texts,
 } from './engine'
 import { describe } from './describe'
 
@@ -39,7 +40,10 @@ export interface Match {
   text: string
   start: number
   end: number
+  /** Each capture's VALUE: its text, or a number, a list, or unescaped content. */
   captures: Captures
+  /** Each capture's matched TEXT, exactly as it appears in the input (what templates insert). */
+  texts: Texts
   /** The pattern's value: its text, or a number, a list, or unescaped content (see DECISIONS.md). */
   value: unknown
 }
@@ -55,9 +59,9 @@ export interface ParseError {
 }
 
 export type ParseResult =
-  | { ok: true; captures: Captures; value: unknown; steps: number }
+  | { ok: true; captures: Captures; texts: Texts; value: unknown; steps: number }
   /** A failed parse still has (empty) `captures`, so `p.parse(s).captures.x` reads safely. */
-  | { ok: false; error: ParseError; captures: Captures; value: undefined; steps: number }
+  | { ok: false; error: ParseError; captures: Captures; texts: Texts; value: undefined; steps: number }
 
 export class PatternError extends Error {
   constructor(message: string) {
@@ -110,7 +114,13 @@ export class Pattern {
     const ctx = context(input, options.maxSteps ?? DEFAULT_MAX_STEPS)
     const hit = match(this.node, ctx, 0)
     if (hit && hit.end === input.length)
-      return { ok: true, captures: hit.caps ?? {}, value: hit.value, steps: ctx.steps }
+      return {
+        ok: true,
+        captures: hit.caps ?? {},
+        texts: hit.texts ?? {},
+        value: hit.value,
+        steps: ctx.steps,
+      }
     if (hit && hit.end >= ctx.farthest) {
       ctx.farthest = hit.end
       ctx.expected = new Set(['the end of the input'])
@@ -127,6 +137,7 @@ export class Pattern {
     return {
       ok: false,
       captures: {},
+      texts: {},
       value: undefined,
       error: {
         at,
@@ -151,6 +162,7 @@ export class Pattern {
           start: at,
           end: hit.end,
           captures: hit.caps ?? {},
+          texts: hit.texts ?? {},
           value: hit.value,
         }
     }
@@ -173,6 +185,7 @@ export class Pattern {
         start: at,
         end: hit.end,
         captures: hit.caps ?? {},
+        texts: hit.texts ?? {},
         value: hit.value,
       })
       at = hit.end > at ? hit.end : at + 1
@@ -186,8 +199,9 @@ export class Pattern {
   }
 
   /**
-   * Replace every match. `replacement` is a template, where `{name}` is that capture and
-   * `{{` / `}}` are literal braces, or a function of the match.
+   * Replace every match. `replacement` is a template, where `{name}` is that capture's matched
+   * TEXT (`$3.50` stays `3.50`, not the number 3.5) and `{{` / `}}` are literal braces; or a
+   * function of the match, which has both `m.captures` (values) and `m.texts`.
    */
   replaceAll(
     input: string,
@@ -280,13 +294,13 @@ function fillTemplate(template: string, m: Match): string {
       const close = template.indexOf('}', i)
       if (close < 0) throw new PatternError(`replacement: unclosed { in ${JSON.stringify(template)}`)
       const name = template.slice(i + 1, close)
-      if (!(name in m.captures))
+      if (!(name in m.texts))
         throw new PatternError(
           `replacement names {${name}}, but the pattern captures ${
             Object.keys(m.captures).map((k) => `{${k}}`).join(', ') || 'nothing'
           }`
         )
-      out += String(m.captures[name])
+      out += m.texts[name]
       i = close
     } else out += c
   }

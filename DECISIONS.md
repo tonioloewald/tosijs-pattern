@@ -45,6 +45,12 @@ A capture records its piece's value: the matched text, unless the piece defines 
 list. A repetition gives its text, unless its items captured: then a list of their captures,
 one per item. `optional` (at most one) is not a list: its captures are simply there or absent.
 
+## Templates insert a capture's matched text (owner, 2026-11-03)
+
+`replaceAll('$3.50', '{amount} USD')` gives `3.50 USD`, not `3.5 USD`: a template is about text,
+and converting a number back to text loses how it was written. Each capture keeps both its
+value (`captures`) and its text (`texts`); a replacement function sees both.
+
 ## A capture that would be lost is an error
 
 A capture inside a repetition that nothing captures would have nowhere to go (each item has its

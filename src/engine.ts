@@ -22,8 +22,12 @@ export type Captures = Record<string, unknown>
 export interface Hit {
   end: number
   caps: Captures | null
+  /** Each capture's matched TEXT, by name (`caps` holds its value). Absent where `caps` is null. */
+  texts?: Texts | null
   value: unknown
 }
+
+export type Texts = Record<string, string>
 
 export class PatternBudgetError extends Error {
   readonly steps: number
@@ -159,13 +163,15 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
     case 'sequence': {
       let at = pos
       let caps: Captures | null = null
+      let texts: Texts | null = null
       for (const item of node.items) {
         const h = match(item, ctx, at)
         if (!h) return null
         at = h.end
         caps = merge(caps, h.caps)
+        texts = merge(texts, h.texts ?? null) as Texts | null
       }
-      return { end: at, caps, value: input.slice(pos, at) }
+      return { end: at, caps, texts, value: input.slice(pos, at) }
     }
     case 'oneOf': {
       for (const option of node.options) {
@@ -180,12 +186,14 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       const items: unknown[] = []
       let hasCaps = false
       let lastCaps: Captures | null = null
+      let lastTexts: Texts | null = null
       while (node.max === null || count < node.max) {
         const h = match(node.item, ctx, at)
         if (!h) break
         count++
         if (h.caps) hasCaps = true
         lastCaps = h.caps
+        lastTexts = h.texts ?? null
         items.push(h.caps ?? h.value)
         if (h.end === at) {
           // A zero-width item would repeat forever; one empty match stands for the rest.
@@ -197,7 +205,7 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       if (count < node.min) return null
       // At most one is not a list: an optional item's captures pass straight through.
       if (node.max === 1)
-        return { end: at, caps: lastCaps, value: input.slice(pos, at) }
+        return { end: at, caps: lastCaps, texts: lastTexts, value: input.slice(pos, at) }
       // Text, unless the items captured: then the list of their captures (see DECISIONS.md).
       return { end: at, caps: null, value: hasCaps ? items : input.slice(pos, at) }
     }
@@ -223,6 +231,7 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       return {
         end: h.end,
         caps: merge(h.caps, { [node.name]: h.value }),
+        texts: merge(h.texts ?? null, { [node.name]: input.slice(pos, h.end) }) as Texts,
         value: h.value,
       }
     }
