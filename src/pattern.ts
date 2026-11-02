@@ -269,7 +269,7 @@ export class Pattern {
   /** Checks a whole pattern once, on first use (see `checkCaptures`). */
   #check(): void {
     if (this.#checked) return
-    checkCaptures(this.node, false, false)
+    checkCaptures(this.node, false, null)
     this.#checked = true
   }
 }
@@ -311,46 +311,85 @@ function fillTemplate(template: string, m: Match): string {
  * A capture inside a repetition or a list, with nothing capturing the repetition, would be
  * LOST (each item's captures go into that item's entry of the list). Silently dropping what the
  * author asked for is the worst outcome, so it is an error that says what to write instead.
- * A capture inside a zero-width check is an error for the same reason.
+ * A capture inside a zero-width check (`followedBy`, `notFollowedBy`, `until`'s stopping
+ * point) is an error for the same reason: those keep nothing of what they matched.
+ *
+ * So is a name recorded twice in one scope, where the second would overwrite the first:
+ * `sequence(capture('a', …), capture('a', …))`, or a capture around one with its own name.
+ * Options of a `oneOf` may share a name (only one of them is recorded), and each item of a
+ * captured repetition is a scope of its own.
+ *
+ * Returns the names this node records in the current scope.
  */
-function checkCaptures(node: Node, inList: boolean, inCheck: boolean): void {
+function checkCaptures(node: Node, inList: boolean, check: string | null): Set<string> {
+  const none = new Set<string>()
   switch (node.kind) {
-    case 'capture':
-      if (inCheck)
+    case 'capture': {
+      if (check)
         throw new PatternError(
-          `capture('${node.name}') is inside followedBy/notFollowedBy, which match nothing: there is nothing to capture`
+          `capture('${node.name}') is inside ${check}, which keeps nothing of what it matched: there is nothing to capture`
         )
       if (inList)
         throw new PatternError(
           `capture('${node.name}') is inside a repetition or list, so each item gets one: capture the repetition to collect them, e.g. capture('${node.name}s', oneOrMore(…))`
         )
+      const item = node.item
+      let names: Set<string>
       // A repetition or list directly under a capture COLLECTS its items' captures (one entry
-      // per item), so captures inside it are wanted, not lost.
-      if (node.item.kind === 'repeat') return checkCaptures(node.item.item, false, inCheck)
-      if (node.item.kind === 'separatedBy') {
-        checkCaptures(node.item.item, false, inCheck)
-        return checkCaptures(node.item.separator, true, inCheck)
-      }
-      return checkCaptures(node.item, false, inCheck)
+      // per item), so captures inside it are wanted, not lost, and each item is its own scope.
+      if (item.kind === 'repeat' && item.max !== 1) {
+        checkCaptures(item.item, false, null)
+        names = none
+      } else if (item.kind === 'separatedBy') {
+        checkCaptures(item.item, false, null)
+        checkCaptures(item.separator, true, null)
+        names = none
+      } else names = checkCaptures(item, false, null)
+      return addName(names, node.name)
+    }
     case 'repeat':
       // At most one (`optional`, `times(1, …)`) is not a list: its captures are there or not.
-      return checkCaptures(node.item, node.max !== 1 || inList, inCheck)
+      if (node.max === 1) return checkCaptures(node.item, inList, check)
+      checkCaptures(node.item, true, check)
+      return none
     case 'separatedBy':
-      checkCaptures(node.item, true, inCheck)
-      return checkCaptures(node.separator, true, inCheck)
+      checkCaptures(node.item, true, check)
+      checkCaptures(node.separator, true, check)
+      return none
     case 'followedBy':
+      checkCaptures(node.item, inList, 'followedBy()')
+      return none
     case 'notFollowedBy':
-      return checkCaptures(node.item, inList, true)
-    case 'sequence':
-      return node.items.forEach((n) => checkCaptures(n, inList, inCheck))
-    case 'oneOf':
-      return node.options.forEach((n) => checkCaptures(n, inList, inCheck))
-    case 'describedAs':
+      checkCaptures(node.item, inList, 'notFollowedBy()')
+      return none
     case 'until':
-      return checkCaptures(node.item, inList, inCheck)
+      checkCaptures(node.item, inList, "until()'s stopping point")
+      return none
+    case 'sequence': {
+      let names = none
+      for (const item of node.items)
+        for (const name of checkCaptures(item, inList, check)) names = addName(names, name)
+      return names
+    }
+    case 'oneOf': {
+      const names = new Set<string>()
+      for (const option of node.options)
+        for (const name of checkCaptures(option, inList, check)) names.add(name)
+      return names
+    }
+    case 'describedAs':
+      return checkCaptures(node.item, inList, check)
     default:
-      return
+      return none
   }
+}
+
+function addName(names: Set<string>, name: string): Set<string> {
+  if (names.has(name))
+    throw new PatternError(
+      `capture('${name}') appears twice where both would be recorded, so the second would overwrite the first: give them different names (or, if only one can match, put them in oneOf(…))`
+    )
+  return new Set(names).add(name)
 }
 
 const p = (node: Node) => new Pattern(node)

@@ -88,5 +88,6 @@ Beside its value, every capture keeps the TEXT it matched, as written: `texts` o
 result or a match. `{name}` in a replacement template inserts the text (so `$3.50` stays
 `3.50`, and a `quoted` capture keeps its quotes); a replacement function sees both.
 
-A capture that would be silently lost (inside a repetition nobody captures) is an error that
-says what to write instead.
+A capture that would be silently lost is an error that says what to write instead: inside a
+repetition nobody captures, inside `followedBy`/`notFollowedBy`/`until`'s stopping point, or a
+name used twice where the second would overwrite the first (`oneOf` options may share one).

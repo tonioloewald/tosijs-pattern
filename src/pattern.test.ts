@@ -122,6 +122,26 @@ group('captures and values', () => {
     expect(() => followedBy(capture('x', digit)).parse('1')).toThrow(/nothing to capture/)
   })
 
+  it('a capture inside until() is lost too (until keeps nothing of its stopping point)', () => {
+    expect(() => sequence(until(capture('stop', ';')), ';').parse('a;')).toThrow(/until/)
+    expect(() => fromJSON({ kind: 'until', item: { kind: 'capture', name: 'x', item: { kind: 'literal', text: ';' } } }).find('a;')).toThrow(/until/)
+  })
+
+  it('the same name twice, where both would be recorded, is an error (the second would overwrite)', () => {
+    expect(() => sequence(capture('a', digit), capture('a', letter)).parse('1x')).toThrow(/capture\('a'\) appears twice/)
+    expect(() => sequence(optional(capture('a', digit)), capture('a', letter)).parse('x')).toThrow(/appears twice/)
+    // A capture around one with the same name would hide it.
+    expect(() => capture('a', sequence(capture('a', digit), letter)).parse('1x')).toThrow(/appears twice/)
+    // oneOf: only one option is recorded, so sharing a name is how you say "either way, call it a".
+    expect(sequence(oneOf(capture('a', digit), capture('a', letter)), end).parse('x').captures).toEqual({ a: 'x' })
+    // Each item of a captured repetition is its own scope.
+    const kv = capture('pairs', oneOrMore(sequence(capture('k', letter), capture('v', digit))))
+    expect(sequence(kv, capture('k', letter)).parse('a1b2z').captures).toEqual({
+      pairs: [{ k: 'a', v: '1' }, { k: 'b', v: '2' }],
+      k: 'z',
+    })
+  })
+
   it('CSV, correctly: quoted fields, doubled quotes, commas and newlines inside', () => {
     const field = oneOf(quoted('"', { escape: 'double' }), optional(oneOrMore(charNotIn(',\n'))))
     const row = capture('fields', separatedBy(field, ','))

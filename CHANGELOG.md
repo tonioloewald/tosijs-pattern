@@ -11,4 +11,7 @@
   `replaceFirst`, `replaceAll`, `split`.
 - Every capture keeps its matched text as well as its value (`texts` on a match and a parse
   result). Replacement templates insert the text: `$3.50` → `'{amount} USD'` gives `3.50 USD`.
+- Two more captures that were silently lost are now errors that say what to write: a name
+  recorded twice in one scope (the second overwrote the first), and a capture inside
+  `until()`'s stopping point.
 - A doc site (tosijs-ui) whose examples run live in the page.

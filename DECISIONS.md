@@ -56,7 +56,13 @@ value (`captures`) and its text (`texts`); a replacement function sees both.
 A capture inside a repetition that nothing captures would have nowhere to go (each item has its
 own). Rather than keep the last one, as regex does, or drop them silently, using such a pattern
 throws, naming the capture and showing what to write. Likewise a capture inside
-`followedBy`/`notFollowedBy`, which match nothing.
+`followedBy`/`notFollowedBy`, which match nothing, or inside `until`'s stopping point, which
+`until` does not consume.
+
+Likewise a name recorded twice in one scope (`sequence(capture('a', …), capture('a', …))`, or a
+capture around one of its own name), where the second would overwrite the first. `oneOf`
+options may share a name, since only one is recorded: that is how to say "either way, call it
+`a`". Each item of a captured repetition is its own scope.
 
 ## No RegExp in the library
 
