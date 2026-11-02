@@ -1,4 +1,4 @@
-<!--{"order": 20}-->
+<!--{"parent": "Guide", "order": 20, "description": "fromRegex(): translate a regex into an equivalent pattern where that is provable, or refuse it with the reason. With the numbers over real code."}-->
 
 # From regex
 

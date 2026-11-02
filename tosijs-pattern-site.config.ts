@@ -12,7 +12,6 @@ export default defineSiteConfig({
   name: PROJECT,
   description:
     'Matching that reads like what it means: a fluent, declarative alternative to regular expressions.',
-  // UNCONFIRMED: the domain is the owner's call (see CLAUDE.md, "Open decisions").
   baseUrl: 'https://pattern.tosijs.net',
   host: 'github-pages',
 
@@ -37,6 +36,8 @@ export default defineSiteConfig({
 
   // The README is the home page; docs-src/ the guide. 'docs' is the OUTPUT dir — never a source.
   docPaths: ['README.md', 'docs-src'],
+  // Section pages (Guide, Design) live with the guide; a missing one would be created here.
+  sectionsDir: 'docs-src',
 
   editableSources: true,
   emitLibrary: false,

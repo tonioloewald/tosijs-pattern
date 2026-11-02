@@ -1,3 +1,5 @@
+<!--{"pin": "top", "description": "Matching that reads like what it means: a fluent, declarative alternative to regular expressions, with no backtracking and a step budget."}-->
+
 # tosijs-pattern
 
 **Matching that reads like what it means.**
@@ -125,6 +127,8 @@ where).
 
 ## Status
 
-`0.1.0-dev`: the core vocabulary, engine and tests. Not yet published. See
-[CLAUDE.md](CLAUDE.md) for where it is going: a regex-to-Pattern translator, a code-editing
-mode and CLI, and the AsyncJS (tjs-lang) builtin.
+`0.1.0-dev`: the vocabulary, the engine, and `fromRegex()`, which translates a regex where it
+can prove the pattern equivalent and refuses it, with the reason, where it cannot (two thirds of
+tjs-lang's own regexes translate; see [From regex](docs-src/from-regex.md)). Not yet published.
+Next: a look-behind piece (the largest refusal), a code-editing mode and CLI, and the AsyncJS
+(tjs-lang) builtin. [CLAUDE.md](CLAUDE.md) has the plan.

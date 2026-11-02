@@ -1,4 +1,4 @@
-<!--{"order": 40}-->
+<!--{"parent": "Design", "order": 40, "description": "A proposed Lean 4 specification of Pattern: the properties worth proving, and how the TypeScript engine is tested against it."}-->
 
 # A formal specification in Lean 4
 

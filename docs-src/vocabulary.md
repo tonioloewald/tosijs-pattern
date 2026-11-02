@@ -1,4 +1,4 @@
-<!--{"order": 10}-->
+<!--{"parent": "Guide", "order": 10, "description": "Every noun and verb in tosijs-pattern, what each matches, and the values and captures a pattern gives back."}-->
 
 # Vocabulary
 

@@ -1,4 +1,4 @@
-<!--{"order": 30}-->
+<!--{"parent": "Design", "order": 30, "description": "How fast tosijs-pattern is against native regex and a linear regex engine, why, and the plan to close the gap."}-->
 
 # Performance
 

@@ -11,7 +11,7 @@ Matching that reads like what it means: a fluent, declarative alternative to reg
 Full documentation, with live code examples, is at the links below.
 
 Pages below are also available as plain markdown: append `index.md` to the URL
-(for example `/vocabulary/index.md`).
+(for example `/guide/index.md`).
 Prefer that if you only need the text. A page marked noindex has no markdown copy.
 
 Live examples run inline on the shared page by default (not sandboxed):
@@ -24,12 +24,16 @@ don't clobber each other; the `iframe` attribute isolates DOM/CSS, not state.
 ## Pages
 
 - https://pattern.tosijs.net/formal/ — A formal specification in Lean 4
-  tjs-lang's AsyncJS VM (`../tjs-lang/docs/ajs-lean-spec.md`) applies to Pattern too. Pattern should
+  A proposed Lean 4 specification of Pattern: the properties worth proving, and how the TypeScript engine is tested against it.
+- https://pattern.tosijs.net/design/ — Design
+  Why tosijs-pattern works the way it does: its speed, and the plan for a formal specification.
 - https://pattern.tosijs.net/from-regex/ — From regex
-  the rule that makes it useful: **a regex that does not translate is refused, with the reason.**
+  fromRegex(): translate a regex into an equivalent pattern where that is provable, or refuse it with the reason. With the numbers over real code.
+- https://pattern.tosijs.net/guide/ — Guide
+  Using tosijs-pattern: the vocabulary, and turning existing regexes into patterns.
 - https://pattern.tosijs.net/performance/ — Performance
-  runs after warm-up). Re-measure before quoting; numbers without a date are not numbers.
+  How fast tosijs-pattern is against native regex and a linear regex engine, why, and the plan to close the gap.
 - https://pattern.tosijs.net/ — tosijs-pattern
-  A good regex programmer reads `^\d{3}-\d{4}$` aloud as "three digits, a dash, four digits".
+  Matching that reads like what it means: a fluent, declarative alternative to regular expressions, with no backtracking and a step budget.
 - https://pattern.tosijs.net/vocabulary/ — Vocabulary
-  Every name is chosen by one test: **read the pattern aloud, and it should say what it matches.**
+  Every noun and verb in tosijs-pattern, what each matches, and the values and captures a pattern gives back.
