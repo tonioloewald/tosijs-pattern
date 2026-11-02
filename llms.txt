@@ -1,13 +1,33 @@
-# tosijs-pattern
+# tosijs-pattern v0.1.0-dev
 
-> Matching that reads like what it means: a fluent, declarative alternative to regular
-> expressions. Plain strings are literal text; nouns are characters (`digit`, `letter`,
-> `charIn('a-z')`); verbs combine (`sequence`, `oneOf`, `oneOrMore`, `optional`, `capture`).
-> No backtracking (possessive repetition, ordered choice), a step budget on every call, no
-> RegExp inside, and patterns are validated JSON data.
+Matching that reads like what it means: a fluent, declarative alternative to regular expressions.
 
-- [README.md](README.md): the tour, with a regex-to-Pattern table.
-- [docs-src/vocabulary.md](docs-src/vocabulary.md): every noun, verb and structural piece.
-- [docs-src/from-regex.md](docs-src/from-regex.md): the planned translator, and why some regexes are refused.
-- [DECISIONS.md](DECISIONS.md): semantics and why (read before assuming regex behaviour).
-- [CLAUDE.md](CLAUDE.md): working in this repo.
+- Docs: https://pattern.tosijs.net
+- Source: https://github.com/tonioloewald/tosijs-pattern
+- npm: https://www.npmjs.com/package/tosijs-pattern
+
+## Documentation
+
+Full documentation, with live code examples, is at the links below.
+
+Pages below are also available as plain markdown: append `index.md` to the URL
+(for example `/vocabulary/index.md`).
+Prefer that if you only need the text. A page marked noindex has no markdown copy.
+
+Live examples run inline on the shared page by default (not sandboxed):
+each has its own `preview` element, but they share one tosijs module, so
+`tosi()` state singletons are shared across every example on a page. This is
+deliberate (it shows tosi isolation and lets you drive demos via the global
+singleton). Namespace example state with unique top-level keys so examples
+don't clobber each other; the `iframe` attribute isolates DOM/CSS, not state.
+
+## Pages
+
+- https://pattern.tosijs.net/from-regex/ — From regex
+  the rule that makes it useful: **a regex that does not translate is refused, with the reason.**
+- https://pattern.tosijs.net/performance/ — Performance
+  runs after warm-up). Re-measure before quoting; numbers without a date are not numbers.
+- https://pattern.tosijs.net/ — tosijs-pattern
+  A good regex programmer reads `^\d{3}-\d{4}$` aloud as "three digits, a dash, four digits".
+- https://pattern.tosijs.net/vocabulary/ — Vocabulary
+  Every name is chosen by one test: **read the pattern aloud, and it should say what it matches.**

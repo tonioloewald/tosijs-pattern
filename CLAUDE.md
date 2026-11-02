@@ -57,6 +57,7 @@ bun scripts/run-examples.ts README.md docs-src/*.md   # run every live example (
 bun bin/site.ts --build                    # build the doc site (docs/) and the library (dist/)
 bun bin/site.ts                            # build, then the dev server (needs `bunx tosijs-dev-certs` once: mkcert)
 bun scripts/regex-census.ts [dir]          # what regexes in a JS tree use (read-only)
+bun scripts/bench.ts                       # Pattern vs native RegExp vs tjs-lang's linear engine
 ```
 
 To check the live examples in a real browser without the dev server: serve `docs/` statically
@@ -78,7 +79,7 @@ To check the live examples in a real browser without the dev server: serve `docs
 | `docs-src/` | Guide pages for the doc site. `docs/` is the BUILD OUTPUT (GitHub Pages) |
 | `demo/site.ts` | The site's bundle: registers the doc system, exposes the library to examples |
 | `bin/site.ts`, `tosijs-pattern-site.config.ts` | The site and library build (tosijs-ui/site) |
-| `scripts/` | `regex-census.ts`, `run-examples.ts` |
+| `scripts/` | `bench.ts` (vs native and tjs-lang's engine), `regex-census.ts`, `run-examples.ts` |
 
 **Reviews go in `reviews/` at the repo root, never `docs/reviews/`:** `docs/` is the generated
 site, wiped on each build and served publicly.
@@ -111,30 +112,43 @@ Each is (or should be) a card on the Virta board, project `tosijs-pattern`.
    generated inputs. This is the owner's question of 2026-11-02 ("to what extent could we provide
    a regex to our translator and simply refuse to run regexes that don't translate?"); answer it
    with numbers.
-2. **What agents need.** Use tjs-lang's grokkability harness (`../tjs-lang`,
+2. **Hone the API by measuring it: obviousness, legibility, writability, readability, economy**
+   (the owner's five, 2026-11-03). Grokkability probes, as tjs-lang runs them
+   (`../tjs-lang/experiments/agent-legibility/`): show a model a pattern and ask what it
+   matches (READ, against the same task as a regex, which is the control); give it a spec and
+   ask for a pattern (WRITE: does it compile, does it behave, how long is it); and for every
+   contested name, A/B the spelling. Small and large models, N samples, the WRONG column decides.
+   Economy is measured too: tokens per pattern against the equivalent regex. Every vocabulary
+   change cites a probe.
+3. **What agents need.** Use tjs-lang's grokkability harness (`../tjs-lang`,
    `experiments/agent-legibility/` and `bun run test:grok`) to collect the regexes small and
    large models write for typical agent string tasks, and to measure whether they can READ and
    WRITE Pattern (the read-aloud claim, tested). Those probes are the method for every naming
    question.
-3. **Linearity.** `find`/`findAll` try every start position, and `until` scans ahead from each,
-   so some shapes are quadratic. Add packrat memoisation (or a smarter scan) and work-counting
-   tests that fail on super-linear growth, for every operation and the structural pieces.
-4. **Code mode, the CLI and the editing skill.** Whitespace and comments skipped between tokens;
+4. **Linearity and speed.** `find`/`findAll` try every start position, and `until` scans ahead
+   from each, so some shapes are quadratic: add packrat memoisation (or a smarter scan) and
+   work-counting tests that fail on super-linear growth. Then the low-hanging fruit in
+   `docs-src/performance.md` (lazy values, no per-node allocation, a first-set prefilter for
+   `find`, closures instead of the `switch`). Today Pattern is 40 to 200 times slower than native
+   regex, and level with or faster than tjs-lang's own linear engine (`bun scripts/bench.ts`).
+   Later, Pattern can EMIT possessive native regexes as a fast path in trusted host code (same
+   page). That needs a differential test and a ReDoS probe per engine first.
+5. **Code mode, the CLI and the editing skill.** Whitespace and comments skipped between tokens;
    `balanced`/`quoted` that understand a host language's strings, template literals and
    comments; a CLI (`tosijs-pattern replace <file> …`) with edit safety (require a unique match
    or a stated count; dry run showing each match in context); a SKILL.md agents use to edit code
    in every repo. Measure: edits that apply on the first try.
-5. **Dogfood in tjs-lang**, first target: the six hand-rolled quote scanners in
+6. **Dogfood in tjs-lang**, first target: the six hand-rolled quote scanners in
    `../tjs-lang/src/lang/parser-params.ts` (tjs-lang board #2877), each replacement held
    byte-identical over tjs-lang's dogfood and compat corpora. Then tjs-lang's ~350 compiler
    regex sites, a pass at a time. File in tjs-lang (`virta create … --project tjs-lang`); do not
    edit tjs-lang from here.
-6. **Unicode.** `letter` is ASCII. Unicode letters need the Unicode tables as DATA (generated,
+7. **Unicode.** `letter` is ASCII. Unicode letters need the Unicode tables as DATA (generated,
    with a freshness test), never `\p{L}`.
-7. **The AsyncJS builtin** (in tjs-lang, later): the engine runs with its steps charged as the
+8. **The AsyncJS builtin** (in tjs-lang, later): the engine runs with its steps charged as the
    VM's fuel; regex literals in AJS translate at compile time; untranslatable ones are compile
    errors. Gated in tjs-lang on the grokkability results.
-8. **Publish**: the shared OIDC workflow (`../tosijs-coding-practices/templates/publish.yml`),
+9. **Publish**: the shared OIDC workflow (`../tosijs-coding-practices/templates/publish.yml`),
    release-doctor, attestation; GitHub Pages for the site. `docs/` (the built site, 15 MB with
    tjs-lang's same-origin bundles) is gitignored, so deploy it to a `gh-pages` branch from a
    throwaway worktree, as tjs-lang's `bin/deploy-site.ts` does, rather than committing build

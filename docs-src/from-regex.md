@@ -73,3 +73,14 @@ over a corpus, what share translates and why the rest is refused,** run over:
 Every translated regex is checked by a DIFFERENTIAL test: the regex and its translation run on
 generated inputs, and must agree on every one. That test is the only place the host `RegExp` is
 allowed.
+
+## Pattern as a way to understand regexes
+
+The translator gives something useful even where no one runs the result: **any regex, read
+aloud.** Paste `^(?:[a-z0-9._]+)@[a-z0-9-]+(?:\.[a-zA-Z]+)+$` and get "the start of the input,
+then one or more characters in .0-9_a-z, then "@", …", or, where it is refused, the precise
+reason (where it would backtrack, and what it was standing in for). That is an explainer for the
+regexes people inherit, review, and copy from answers they do not understand: the same audience
+the "Regexes are Hard" survey found (70% of developers say regexes are less readable than other
+code). It wants a page on the doc site where you paste a regex and see the pattern, its
+description, and its railroad diagram.
