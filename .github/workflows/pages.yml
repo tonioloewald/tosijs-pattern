@@ -1,0 +1,78 @@
+# Build the doc site from a commit and deploy it to GitHub Pages (https://pattern.tosijs.net).
+#
+# Runs on a release tag, or by hand (Actions → Pages → Run workflow, or
+# `gh workflow run pages.yml -f ref=main`). Not on every push to main: the site documents
+# the released library, and a push between releases would show API that npm does not have yet.
+#
+# The build output (docs/, ~15 MB with tjs-lang's same-origin bundles) is never committed: it
+# goes up as a Pages artifact. Only the deploy job can mint the Pages token, and it runs no repo
+# code, the same split as publish.yml's stage job.
+#
+# Pins (Node 24 releases, by SHA): checkout and setup-bun from
+# tosijs-coding-practices/templates/publish.yml; the Pages actions looked up 2026-11-03.
+
+name: Pages
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Commit, branch or tag to build the site from'
+        required: false
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - run: bun install --frozen-lockfile
+      - run: bun test
+      # Builds docs/ (the site, with its example check) and dist/.
+      - run: bun run build
+
+      # tosijs-ui skips copying the tjs-lang browser bundles without a word when it cannot
+      # resolve them, and live examples then run a CDN's copy (tjs-lang bin/deploy-site.ts).
+      - name: The site is complete
+        run: |
+          test -f docs/index.html || { echo "::error::docs/index.html is missing"; exit 1; }
+          for f in tjs/tjs-browser.js tjs/tjs-browser-from-ts.js; do
+            test -f "docs/$f" || { echo "::error::docs/$f is missing: live examples would run a CDN's tjs-lang"; exit 1; }
+          done
+          test "$(cat docs/CNAME)" = "pattern.tosijs.net" || { echo "::error::docs/CNAME is not pattern.tosijs.net"; exit 1; }
+
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

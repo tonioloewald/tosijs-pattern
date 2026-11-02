@@ -156,10 +156,11 @@ Each is (or should be) a card on the Virta board, project `tosijs-pattern`.
    VM's fuel; regex literals in AJS translate at compile time; untranslatable ones are compile
    errors. Gated in tjs-lang on the grokkability results.
 10. **Publish**: the shared OIDC workflow (`../tosijs-coding-practices/templates/publish.yml`),
-   release-doctor, attestation; GitHub Pages for the site. `docs/` (the built site, 15 MB with
-   tjs-lang's same-origin bundles) is gitignored, so deploy it to a `gh-pages` branch from a
-   throwaway worktree, as tjs-lang's `bin/deploy-site.ts` does, rather than committing build
-   output to `main`.
+   release-doctor, attestation; GitHub Pages for the site. In place (2026-11-03):
+   `.github/workflows/publish.yml` (the template, unchanged), `ci.yml`, and `pages.yml`, which
+   builds the site from a tag or a chosen ref and deploys it as a Pages ARTIFACT (Pages is set
+   to "GitHub Actions", so a `gh-pages` branch would not be served; `docs/` stays gitignored).
+   `bun run build:lib` builds only what npm ships.
 
 ## Decided by the owner (2026-11-03)
 
