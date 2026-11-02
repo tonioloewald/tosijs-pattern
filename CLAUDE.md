@@ -51,7 +51,7 @@ doc and this repo differ, this repo is current.
 ## Commands
 
 ```sh
-bun test                                   # the suite (35 tests)
+bun test                                   # the suite (59 tests)
 bunx tsc --noEmit                          # typecheck
 bun scripts/run-examples.ts README.md docs-src/*.md   # run every live example (stub preview)
 bun bin/site.ts --build                    # build the doc site (docs/) and the library (dist/)
@@ -93,7 +93,8 @@ Built and verified:
   `separatedBy`, `number`, `integer`).
 - Operations: `matches`, `parse` (with line/column errors), `find`, `findAll`, `occursIn`,
   `replaceFirst`, `replaceAll`, `split`, `describe`, `toJSON` / `fromJSON`.
-- 35 tests. The semantics tests were mutation-checked: making repetition give back, or `oneOf`
+- 59 tests. A guard test fails if a node kind is missing from the engine, `describe` or
+  `fromJSON`. The semantics tests were mutation-checked: making repetition give back, or `oneOf`
   take the longest, turns 10 red. A differential corpus compares patterns with the regex a
   fluent engineer would write.
 - The doc site builds clean; all 7 live examples ran in headless Chrome.
@@ -166,8 +167,7 @@ Each is (or should be) a card on the Virta board, project `tosijs-pattern`.
 - **The site's domain is `pattern.tosijs.net`** (as in the site config).
 - **Replacement templates insert the matched TEXT of a capture**, not its typed value:
   `replaceAll('$3.50', '{amount} USD')` must give `3.50 USD` (today it gives `3.5 USD`). The
-  function form keeps access to both (the `Match`'s captures are values; add the texts).
-  Not yet implemented: do it first, with a test row for exactly this case.
+  function form sees both (`m.captures` are values, `m.texts` the text). Done (#3756).
 
 ## Open decisions (the owner's)
 

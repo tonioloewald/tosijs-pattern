@@ -1,6 +1,6 @@
 /**
  * A pattern read aloud. This is the library's readability promise made executable: if the
- * description reads badly, the vocabulary is wrong, and `describe.test.ts` is where that shows.
+ * description reads badly, the vocabulary is wrong, and the descriptions in `pattern.test.ts` (and on the doc site) are where that shows.
  *
  *   sequence(start, times(3, digit), '-', times(4, digit), end).describe()
  *   → 'the start of the input, then exactly 3 digits, then "-", then exactly 4 digits, then the end of the input'

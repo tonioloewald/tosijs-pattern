@@ -39,6 +39,9 @@ import {
   type Pattern,
 } from './index'
 import { WHITESPACE, inRanges } from './chars'
+import { KINDS, type Kind, type Node } from './nodes'
+import { describe as describeNode } from './describe'
+import { match, context } from './engine'
 
 group('nouns', () => {
   it('digit, letter, hexDigit, wordChar', () => {
@@ -293,5 +296,49 @@ group('agrees with the regex a fluent engineer would write', () => {
         const got = pattern.find(s) !== null && (pattern.find(s)!.start === 0)
         expect([s, got]).toEqual([s, re.test(s)])
       }
+    })
+})
+
+/**
+ * The node set is CLOSED, and each kind lives in four places: `nodes.ts`, the engine,
+ * `describe.ts` and `fromJSON`. `Record<Kind, …>` makes the compiler refuse a sample list that
+ * misses a kind; the test refuses a kind any of the other three does not handle.
+ */
+const lit: Node = { kind: 'literal', text: 'a' }
+const SAMPLES: Record<Kind, Node> = {
+  literal: lit,
+  chars: { kind: 'chars', ranges: [[97, 122]] },
+  anyChar: { kind: 'anyChar' },
+  sequence: { kind: 'sequence', items: [lit, lit] },
+  oneOf: { kind: 'oneOf', options: [lit, { kind: 'literal', text: 'b' }] },
+  repeat: { kind: 'repeat', item: lit, min: 1, max: null },
+  followedBy: { kind: 'followedBy', item: lit },
+  notFollowedBy: { kind: 'notFollowedBy', item: lit },
+  capture: { kind: 'capture', name: 'x', item: lit },
+  describedAs: { kind: 'describedAs', label: 'an a', item: lit },
+  start: { kind: 'start' },
+  end: { kind: 'end' },
+  lineStart: { kind: 'lineStart' },
+  lineEnd: { kind: 'lineEnd' },
+  until: { kind: 'until', item: lit },
+  quoted: { kind: 'quoted', quote: '"', escape: '\\' },
+  balanced: { kind: 'balanced', open: '(', close: ')', quotes: '"', escape: null },
+  separatedBy: { kind: 'separatedBy', item: lit, separator: { kind: 'literal', text: ',' }, min: 0 },
+  number: { kind: 'number' },
+  integer: { kind: 'integer' },
+}
+
+group('every node kind is handled in all four places', () => {
+  it('the samples cover KINDS exactly', () => {
+    expect(Object.keys(SAMPLES).sort()).toEqual([...KINDS].sort())
+  })
+  for (const kind of KINDS)
+    it(kind, () => {
+      const node = SAMPLES[kind]
+      expect(typeof describeNode(node)).toBe('string')
+      expect(describeNode(node).length).toBeGreaterThan(0)
+      for (const input of ['', 'a', 'aa,a', '"a"', '(a)', '-1.5', 'x\n'])
+        expect(() => match(node, context(input, 10_000), 0)).not.toThrow()
+      expect(fromJSON(JSON.parse(JSON.stringify(node))).toJSON()).toEqual(node)
     })
 })

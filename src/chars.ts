@@ -82,7 +82,7 @@ export function rangeString(ranges: Ranges): string {
 
 /**
  * JavaScript's `\s`, as data: the whitespace and line terminators ECMAScript defines.
- * Spelled out so the set is visible and testable (`chars.test.ts` checks it against `\s`).
+ * Spelled out so the set is visible and testable (`pattern.test.ts` checks it against `\s` over the whole BMP).
  */
 export const WHITESPACE: Ranges = normalize([
   [0x09, 0x0d],

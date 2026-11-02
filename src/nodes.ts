@@ -5,7 +5,7 @@
  * there is no code in it to run.
  *
  * The set is CLOSED. Adding a kind means adding it here, to the engine, to `describe`, and to
- * `fromJSON`'s validator; `nodes.test.ts` fails if any of the four is missing one.
+ * `fromJSON`'s validator; the "every node kind is handled" tests in `pattern.test.ts` fail if any of the four misses one.
  */
 
 /** Inclusive code-point ranges, sorted and merged: `[[48, 57]]` is `0-9`. */
