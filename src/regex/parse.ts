@@ -330,7 +330,7 @@ class Parser {
     const cls = this.classEscape()
     if (cls) return this.set(cls.ranges, cls.negated, this.src.slice(at, this.pos), at)
     if (c === 'b' || c === 'B')
-      throw new RegexRefusal('word-boundary', at, `\\${c} looks at the character BEFORE the position, which Pattern cannot yet`, c === 'b' ? 'Say what is on each side: notFollowedBy(wordChar) after a word, or start the match at a non-word character' : '')
+      throw new RegexRefusal('word-boundary', at, `\\${c} looks at the character BEFORE the position, which Pattern cannot yet`, c === 'b' ? 'After a word, say what follows: .ifNotFollowedBy(pattern.wordChar())' : '')
     if (c >= '1' && c <= '9')
       throw new RegexRefusal('backreference', at, `\\${c} is a backreference (memory of an earlier match), which a pattern does not have`, 'Capture both and compare them in code')
     if (c === 'k' && (this.flags.u || this.src.includes('(?<')))

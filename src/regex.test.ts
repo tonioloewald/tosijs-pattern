@@ -64,6 +64,8 @@ const REFUSES: [RegExp, RefusalCode, RegExp][] = [
   [/é/i, 'caseless-non-ascii', /Unicode case tables/],
   [/\p{L}/u, 'unicode-property', /property tables/],
   [/a/y, 'unsupported-flag', /sticky/],
+  // Greedy .* before a literal means the LAST one, which until() is not (from-regex.md says so).
+  [/a.*;/, 'repetition-backtracks', /giving some back/],
 ]
 
 group('fromRegex refuses what would need backtracking (or what Pattern lacks), saying why', () => {
@@ -79,6 +81,19 @@ group('fromRegex refuses what would need backtracking (or what Pattern lacks), s
       expect((error as RegexRefusal).code).toBe(code)
       expect((error as RegexRefusal).message).toMatch(why)
     })
+
+  it('every method a suggestion names is a real method (it is code the author will type)', () => {
+    for (const [re] of REFUSES) {
+      let suggestion = ''
+      try {
+        fromRegex(re)
+      } catch (e) {
+        suggestion = (e as RegexRefusal).suggestion
+      }
+      for (const [, name] of suggestion.matchAll(/([a-zA-Z]+)\(/g))
+        expect([re, name, typeof (pattern as any)[name!]]).toEqual([re, name, 'function'])
+    }
+  })
 
   it('a refusal says where in the source', () => {
     try {

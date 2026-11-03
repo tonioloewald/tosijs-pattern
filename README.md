@@ -10,6 +10,10 @@ A good regex programmer reads `^\d{3}-\d{4}$` aloud as "three digits, a dash, fo
 Almost nobody else can, and nobody can read it at a glance once it grows. tosijs-pattern
 writes the reading down:
 
+```sh
+npm install tosijs-pattern    # or: bun add tosijs-pattern
+```
+
 ```js
 import { pattern } from 'tosijs-pattern'
 import { show } from 'tosijs-pattern/demo'
@@ -22,6 +26,10 @@ show(preview, {
   "phone.matches('55-1234')": phone.matches('55-1234'),
 })
 ```
+
+(The examples on this page run live on [the site](https://pattern.tosijs.net); `show(preview, …)`
+is the site's display helper, from `tosijs-pattern/demo`, which only the site has. In your own
+code, `console.log` the same values.)
 
 One import. A chain reads in the order it matches, and typing `pattern.` lists the whole
 vocabulary in your editor's autocomplete. Every pattern can also say what it is (`describe()`). Text
@@ -68,7 +76,7 @@ The rules, which are meant to be guessable without reading them:
 - **`.as(name)` captures the step just before it.** `.group(…)` makes a chain one step, so
   `.group(pattern.digits().text('.').digits()).as('version')` captures all of it.
 
-The full list is in [the vocabulary](docs-src/vocabulary.md).
+The full list is in [the vocabulary](https://pattern.tosijs.net/vocabulary/).
 
 ## Any regex, as code you can read
 
@@ -86,7 +94,7 @@ show(preview, { 'version.toCode()': version.toCode(), 'version.describe()': vers
 ```
 
 Where a regex only works by backtracking, it is refused with the reason and what to write
-instead. See [From regex](docs-src/from-regex.md).
+instead. See [From regex](https://pattern.tosijs.net/from-regex/).
 
 ## What regex cannot do
 
@@ -152,7 +160,14 @@ where).
   A regex finds that match only by retrying; here, a pattern that would need retrying is one
   that has not said what it means.
 - **A step budget.** Every call counts its work and stops at `maxSteps`
-  (default 10 million) with a `PatternBudgetError`, so the worst case is the caller's choice.
+  (default 10 million) with a `PatternBudgetError`, so the worst case is the caller's choice:
+  `p.findAll(untrusted, { maxSteps: 100_000 })`.
+- **Not yet linear everywhere.** `find` and `findAll` try each start position in turn, so a
+  pattern that scans ahead from wherever it starts (a leading `until`, or a leading repetition
+  such as `letters()` before something that then fails) does work proportional to the SQUARE of
+  the text on input where it does not match. That ends in a `PatternBudgetError`, never a hang.
+  Giving the pattern a definite first step (a literal, or `startAt`/`startAfter`) keeps it
+  linear; making every search linear is planned work (#3750).
 - **Patterns are data.** `toJSON()` gives plain JSON and `fromJSON()` reads it back,
   validating every node, so a pattern can be stored, sent, and accepted from someone you do not
   trust: there is no code in it.
@@ -160,8 +175,10 @@ where).
 
 ## Status
 
-`0.1.0-dev`: the vocabulary, the engine, and `fromRegex()`, which translates a regex where it
-can prove the pattern equivalent and refuses it, with the reason, where it cannot (two thirds of
-tjs-lang's own regexes translate; see [From regex](docs-src/from-regex.md)). Not yet published.
-Next: a look-behind piece (the largest refusal), a code-editing mode and CLI, and the AsyncJS
-(tjs-lang) builtin. [CLAUDE.md](CLAUDE.md) has the plan.
+`0.1.0`, the first release: the vocabulary, the engine, `toCode()`, and `fromRegex()`, which
+translates a regex where it can prove the pattern equivalent and refuses it, with the reason,
+where it cannot (two thirds of tjs-lang's own regexes translate; see
+[From regex](https://pattern.tosijs.net/from-regex/)). It is 0.x: names may still change, settled
+by measuring how well people and models read and write them. Next: `\b` and multiline `^`
+(the largest remaining refusals), linear search everywhere, a code-editing mode and CLI.
+[CLAUDE.md](https://github.com/tonioloewald/tosijs-pattern/blob/main/CLAUDE.md) has the plan.

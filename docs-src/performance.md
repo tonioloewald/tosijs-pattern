@@ -22,6 +22,13 @@ runs after warm-up). Re-measure before quoting; numbers without a date are not n
   patterns to the host's backtracking engine (tjs-lang's AsyncJS) runs its own linear engine in
   JavaScript. Pattern matches it on simple validation and beats it by 2 to 3 times on scanning
   and CSV. Replacing regex with Pattern there costs nothing.
+- **Where it is not linear yet: searching.** `find` and `findAll` try each start position, so a
+  pattern that scans ahead from any start does work proportional to the square of the text when
+  it fails: measured, `pattern.until(';').findAll('a'.repeat(4000))` and
+  `pattern.letters().text('=').findAll('a'.repeat(5000))` both exceed the default 10-million-step
+  budget. It ends in a `PatternBudgetError`, never a hang, and a definite first step (a literal,
+  or `startAt`/`startAfter`, which caches its scan) keeps a search linear. Memoising per position
+  (#3750) is the fix.
 
 ## Low-hanging fruit (not done yet)
 

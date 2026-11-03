@@ -59,13 +59,15 @@ and refuses when it cannot. The proof is a local check:
 2. **An alternation** is safe when no option can match where an earlier one already matched a
    prefix of it (in practice, when their first characters differ, or the longer comes first,
    which the translator can reorder only when that is provably equivalent).
-3. Where the check fails, the translator looks for the STRUCTURE the backtracking was standing
-   in for, and names it:
-   - `.*?X` and `.*X` before a literal become `.until(X)`.
-   - `"(?:[^"\\]|\\.)*"` becomes `.quoted('"', { escape: '\\' })`.
-   - `[^,]*(?:,[^,]*)*` becomes `.listOf(…, { separatedBy: ',' })`.
+3. **A lazy repetition** before what follows it, `.*?X`, becomes `.until(X)`: the same match,
+   with no retrying. (Greedy `.*X` is refused: it means the LAST `X`, which `until` is not.)
 4. Anything else is refused: "`\d+5`: the repetition can consume what follows it, so this regex
    only matches by retrying. Say where the digits stop: …".
+
+**Not built yet** (#3767): naming the structure a regex spells out by hand, so that
+`"(?:[^"\\]|\\.)*"` comes back as `.quoted('"', { escape: '\\' })` and `[^,]*(?:,[^,]*)*` as
+`.listOf(…, { separatedBy: ',' })`. Today both translate, faithfully, as the alternation and
+repetition they are written as.
 
 ## The rest of the mapping
 
@@ -74,12 +76,12 @@ and refuses when it cannot. The proof is a local check:
 | `(?=x)`, `(?!x)` | `ifFollowedBy`, `ifNotFollowedBy` | direct |
 | `(?<=x)`, `(?<!x)` | refused; write `pattern.startAfter(x)…` | for a search, `startAfter(x)` is what a lookbehind is usually for: the match begins after `x`, which is not part of it. Not translated automatically: with `findAll`, a lookbehind can look back into the previous match, and a skip cannot |
 | `\1`, `\k<n>` | refused | backreferences are memory, not matching; 3% |
-| lazy `*?`, `+?` | `until(…)` when followed by a literal, else refused | 7% |
+| lazy `*?`, `+?` | `until(…)` before what follows; at the very end, the fewest it may take | 7% |
 | `i` flag | `anyCase` / both-case ranges | |
 | `m` flag | `$` becomes "if followed by a line terminator, or the end"; `^` is refused | `^` with `m` looks behind; JavaScript's line terminators include `\u2028`/`\u2029` |
 | `s` flag | `anyChar()`; without it, `.` is `charNotIn` the line terminators | |
 | `g` flag | the operation (`findAll`, `replaceAll`) | |
-| `y` flag | `find` at a position | |
+| `y` flag | refused (`unsupported-flag`) | for a match at one position, use `p.find(input, { from })` and check where it starts |
 | `u` flag | always on: code points | |
 
 ## What it found
@@ -93,22 +95,18 @@ and refuses when it cannot. The proof is a local check:
 BEFORE the position, which Pattern cannot yet. A `precededBy` piece would recover most of it;
 that is the next decision.
 
-## How much will translate? The plan, before measuring
+## Before measuring: what regexes use
 
 A census of the 7,926 distinct regex literals in a large `node_modules` (2026-11-02; mostly
 developer tooling, so lexer-heavy) found: quantifiers in 76%, character classes 60%,
 alternation 45%, capture groups 40%, lookahead 15%, lazy quantifiers 7%, backreferences 3%,
 lookbehind 0.5%. Only about 13% were simple enough for plain string methods.
 
-That population is not the one that matters most. **The first job of the translator is to report,
-over a corpus, what share translates and why the rest is refused,** run over:
-
-1. that census (the script is `scripts/regex-census.ts` once it is moved here);
-2. regexes language models write for typical agent tasks (extract fields from model output,
-   validate a date or an email, split records, clean whitespace), collected with tjs-lang's
-   grokkability harness;
-3. the regexes in tjs-lang's own compiler (about 350 sites), which are also the first migration
-   target.
+That population is not the one that matters most. `scripts/from-regex-report.ts <dir>` reports,
+over any tree, what share translates and why the rest is refused; the table above is its output
+over tjs-lang and that `node_modules`. The third corpus, the regexes language models write for
+typical agent tasks (extract fields, validate a date or an email, split records), is still to be
+collected (#3749).
 
 Every translated regex is checked by a DIFFERENTIAL test: the regex and its translation run on
 generated inputs, and must agree on every one. That test is the only place the host `RegExp` is
