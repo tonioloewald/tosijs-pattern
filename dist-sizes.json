@@ -1,0 +1,41 @@
+{
+  "version": "0.1.0",
+  "sizes": {
+    "dist/chars.d.ts": {
+      "raw": 1841,
+      "gz": 865
+    },
+    "dist/code.d.ts": {
+      "raw": 714,
+      "gz": 444
+    },
+    "dist/describe.d.ts": {
+      "raw": 517,
+      "gz": 323
+    },
+    "dist/engine.d.ts": {
+      "raw": 2453,
+      "gz": 1188
+    },
+    "dist/index.d.ts": {
+      "raw": 335,
+      "gz": 201
+    },
+    "dist/index.js": {
+      "raw": 80143,
+      "gz": 19866
+    },
+    "dist/json.d.ts": {
+      "raw": 133,
+      "gz": 122
+    },
+    "dist/nodes.d.ts": {
+      "raw": 4212,
+      "gz": 1757
+    },
+    "dist/pattern.d.ts": {
+      "raw": 13354,
+      "gz": 4409
+    }
+  }
+}
