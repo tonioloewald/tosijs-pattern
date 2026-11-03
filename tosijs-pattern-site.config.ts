@@ -4,6 +4,7 @@ Doc-site configuration for tosijs-pattern, consumed by `bin/site.ts` and fed to 
 `docs-src/` holds the guide pages. Every ```js fence is a LIVE example: it runs in the page,
 and `import … from 'tosijs-pattern'` resolves to this repo's source through `demo/site.ts`.
 */
+import { readFileSync } from 'fs'
 import { defineSiteConfig } from 'tosijs-ui/site'
 
 const PROJECT = 'tosijs-pattern'
@@ -18,6 +19,10 @@ export default defineSiteConfig({
   // 8787 tosijs-ui, 8788 tosijs-product, 8789 editor2, 8790 timezones, 8791 in use,
   // 8797 tjs-lang's site preview. Take one nobody uses.
   port: 8792,
+
+  // The project icon: demo/static/ is copied to the web root, so it is also /favicon.svg (the
+  // default favicon). Inlined as the header's brand mark.
+  logo: readFileSync(new URL('./demo/static/favicon.svg', import.meta.url), 'utf8'),
 
   projectLinks: {
     tosijs: 'https://tosijs.net',
