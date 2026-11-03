@@ -76,7 +76,7 @@ and refuses when it cannot. The proof is a local check:
 | `\1`, `\k<n>` | refused | backreferences are memory, not matching; 3% |
 | lazy `*?`, `+?` | `until(…)` when followed by a literal, else refused | 7% |
 | `i` flag | `anyCase` / both-case ranges | |
-| `m` flag | `lineStart` / `lineEnd` | |
+| `m` flag | `$` becomes "if followed by a line terminator, or the end"; `^` is refused | `^` with `m` looks behind; JavaScript's line terminators include `\u2028`/`\u2029` |
 | `s` flag | `anyChar()`; without it, `.` is `charNotIn` the line terminators | |
 | `g` flag | the operation (`findAll`, `replaceAll`) | |
 | `y` flag | `find` at a position | |

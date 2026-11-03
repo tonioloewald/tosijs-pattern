@@ -25,4 +25,7 @@
   differential check on `/[\uD800-\uDFFF]/u`.
 - `toCode()`: any pattern written as the chain that builds it, so `fromRegex(re).toCode()` gives
   a regex back as readable code.
+- `lineStart()` and `lineEnd()` agree with `lineBreak()`: a line break is `\r\n`, `\n` or `\r`,
+  never the middle of a `\r\n`. Before, `lineStart()` ignored `\r`, so a file with `\r` line
+  endings had one line, and `lineEnd()` matched between the `\r` and `\n` of a `\r\n`.
 - A doc site (tosijs-ui) whose examples run live in the page.

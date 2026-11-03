@@ -61,7 +61,7 @@ next character literal. There are no class escapes inside it: name the noun inst
 | Method | Matches | Regex |
 | --- | --- | --- |
 | `start()`, `end()` | the start or end of the input | `^`, `$` |
-| `lineStart()`, `lineEnd()` | the start or end of a line | `^`, `$` with `m` |
+| `lineStart()`, `lineEnd()` | the start or end of a line, where a line break is `\r\n`, `\n` or `\r` (the same as `lineBreak()`), so a file's lines are the same whichever convention wrote it | `^`, `$` with `m`, nearly: a regex also breaks lines inside `\r\n` and at `\u2028`/`\u2029` |
 | `ifFollowedBy(p)` | if `p` comes next | `(?=p)` |
 | `ifNotFollowedBy(p)` | if `p` does not come next | `(?!p)` |
 

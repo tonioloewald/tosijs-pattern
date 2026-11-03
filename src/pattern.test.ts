@@ -249,6 +249,21 @@ group('operations', () => {
     const line = pattern.lineStart().letters().as('l').lineEnd()
     expect(line.findAll('ab\ncd\n9').map((m) => m.captures.l)).toEqual(['ab', 'cd'])
   })
+
+  it('a line is the same whether \n, \r\n or \r ended it; lineStart, lineEnd and lineBreak agree', () => {
+    const line = pattern.lineStart().letters().as('l').lineEnd()
+    for (const br of ['\n', '\r\n', '\r'])
+      expect([br, line.findAll(['ab', 'cd', 'ef'].join(br)).map((m) => m.captures.l)]).toEqual([br, ['ab', 'cd', 'ef']])
+    // Never inside a \r\n: no line ends between its \r and \n, and none starts there.
+    const at = (p: Pattern, s: string) => p.findAll(s).map((m) => m.start)
+    expect(at(pattern.lineEnd(), 'a\r\nb')).toEqual([1, 4])
+    expect(at(pattern.lineStart(), 'a\r\nb')).toEqual([0, 3])
+    // Each line end is followed by a line break or the end, and each line break by a line start.
+    const text = 'a\r\n\nb\r\rc\n'
+    for (const m of pattern.lineEnd().findAll(text))
+      expect(pattern.oneOf(pattern.lineBreak(), pattern.end()).find(text, { from: m.start })?.start).toBe(m.start)
+    expect(at(pattern.lineBreak().lineStart(), text)).toEqual(at(pattern.lineBreak(), text))
+  })
 })
 
 group('the step budget bounds the work', () => {

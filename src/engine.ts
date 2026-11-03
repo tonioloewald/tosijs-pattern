@@ -253,12 +253,14 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       return pos === input.length
         ? { end: pos, caps: null, value: '' }
         : fail(ctx, pos, expectation(node))
+    // A line break is \r\n, \n or \r, the same three `lineBreak` matches, and never the middle of
+    // a \r\n: so a file's lines are the same whichever convention wrote it.
     case 'lineStart':
-      return pos === 0 || input[pos - 1] === '\n'
+      return pos === 0 || input[pos - 1] === '\n' || (input[pos - 1] === '\r' && input[pos] !== '\n')
         ? { end: pos, caps: null, value: '' }
         : fail(ctx, pos, expectation(node))
     case 'lineEnd':
-      return pos === input.length || input[pos] === '\n' || input[pos] === '\r'
+      return pos === input.length || input[pos] === '\r' || (input[pos] === '\n' && input[pos - 1] !== '\r')
         ? { end: pos, caps: null, value: '' }
         : fail(ctx, pos, expectation(node))
     case 'until': {
