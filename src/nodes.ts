@@ -55,7 +55,14 @@ export type Node =
       escape: string | null
     }
   /** Zero or more `item`s with `separator` between them (at least `min`). Its value is a list. */
-  | { kind: 'separatedBy'; item: Node; separator: Node; min: number }
+  | { kind: 'separatedBy'; item: Node; separator: Node; min: number; trailing?: boolean }
+  /**
+   * One row of named columns, never crossing a line break. FIXED width (`widths`): each column
+   * takes its width or what is left of the line, and its value is trimmed of padding. DELIMITED
+   * (`separator`): each column is the text up to the separator or the line end, as written.
+   * The value is a record, `{ name: value, … }`. An empty line is not a row.
+   */
+  | { kind: 'columns'; names: string[]; widths: number[] | null; separator: Node | null }
   /**
    * At the end of a line: the lines after it that are indented DEEPER than it (a Python body, a
    * Markdown list item's continuation), blank lines between them included. It stops before the
@@ -88,6 +95,7 @@ export const KINDS: readonly Kind[] = [
   'quoted',
   'balanced',
   'separatedBy',
+  'columns',
   'indentedBlock',
   'number',
   'integer',

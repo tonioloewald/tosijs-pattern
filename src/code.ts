@@ -123,7 +123,13 @@ export function toCode(node: Node, nouns: Record<Named, Node>, pieces: Record<st
         return `.balanced(${quote(n.open)}, ${quote(n.close)}${opts.length ? `, { ${opts.join(', ')} }` : ''})`
       }
       case 'separatedBy':
-        return `.listOf(${arg(n.item)}, { separatedBy: ${arg(n.separator)}${n.min ? `, atLeast: ${n.min}` : ''} })`
+        if (n.trailing && !n.min && named(n.separator) === 'lineBreak')
+          return piece(n.item) === 'restOfLine' ? '.lines()' : `.lines(${arg(n.item)})`
+        return `.listOf(${arg(n.item)}, { separatedBy: ${arg(n.separator)}${n.min ? `, atLeast: ${n.min}` : ''}${n.trailing ? ', trailing: true' : ''} })`
+      case 'columns':
+        return n.widths
+          ? `.columns([${n.names.map((k, i) => `{ name: ${quote(k)}, width: ${n.widths![i]} }`).join(', ')}])`
+          : `.columns([${n.names.map(quote).join(', ')}], { separatedBy: ${arg(n.separator!)} })`
     }
   }
 

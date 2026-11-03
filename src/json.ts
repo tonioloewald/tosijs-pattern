@@ -125,7 +125,26 @@ function node(x: unknown, at: string, depth: number): Node {
         item: child('item'),
         separator: child('separator'),
         min: o.min === undefined ? 0 : int('min')!,
+        ...(o.trailing === true ? { trailing: true } : {}),
       }
+    case 'columns': {
+      const names = o.names
+      if (!Array.isArray(names) || !names.length || !names.every((n) => typeof n === 'string' && isIdentifier(n)))
+        throw new PatternError(`${at}.names: expected a list of identifiers`)
+      if (new Set(names).size !== names.length) throw new PatternError(`${at}.names: a name appears twice`)
+      const w = o.widths
+      const hasWidths = Array.isArray(w)
+      const hasSeparator = o.separator !== null && o.separator !== undefined
+      if (hasWidths === hasSeparator) throw new PatternError(`${at}: give widths or a separator, not both or neither`)
+      if (hasWidths && (w.length !== names.length || !w.every((n) => Number.isInteger(n) && n > 0)))
+        throw new PatternError(`${at}.widths: expected one whole number > 0 per name`)
+      return {
+        kind,
+        names: [...names] as string[],
+        widths: hasWidths ? ([...w] as number[]) : null,
+        separator: hasSeparator ? child('separator') : null,
+      }
+    }
     default:
       // anyChar, start, end, lineStart, lineEnd, indentedBlock, number, integer: no fields.
       return { kind } as Node

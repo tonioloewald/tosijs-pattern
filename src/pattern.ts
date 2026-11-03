@@ -323,7 +323,7 @@ export class Pattern {
     })
   }
   /** Zero or more items with a separator between them: `.listOf(field, { separatedBy: ',' })`. Its value is a list. */
-  listOf(item: Piece, options: { separatedBy: Piece; atLeast?: number }): Pattern {
+  listOf(item: Piece, options: { separatedBy: Piece; atLeast?: number; trailing?: boolean }): Pattern {
     if (!options || options.separatedBy === undefined)
       throw new PatternError("listOf(): say what separates the items, e.g. listOf(x, { separatedBy: ',' })")
     return this.#add({
@@ -331,7 +331,66 @@ export class Pattern {
       item: toNode(item, 'listOf() item'),
       separator: toNode(options.separatedBy, 'listOf() separatedBy'),
       min: count(options.atLeast ?? 0, 'listOf() atLeast'),
+      ...(options.trailing ? { trailing: true } : {}),
     })
+  }
+  /**
+   * One `row` per line, and a final line break allowed: `.lines(pattern.columns({ name: 10 }))`.
+   * With no row, each line's text. Its value is the list of rows.
+   */
+  lines(row: Piece = pattern.restOfLine()): Pattern {
+    return this.#add({
+      kind: 'separatedBy',
+      item: toNode(row, 'lines()'),
+      separator: NOUNS.lineBreak,
+      min: 0,
+      trailing: true,
+    })
+  }
+  /**
+   * One row of named columns, in order, never crossing a line break. Its value is the row,
+   * `{ name: … }`.
+   *
+   *   .columns([{ name: 'name', width: 10 }, { name: 'qty', width: 6 }])   fixed width; trimmed
+   *   .columns(['name', 'qty'], { separatedBy: '\t' })                     delimited; as written
+   *
+   * A fixed-width line may end early (editors strip trailing spaces): the columns left are short
+   * or empty. An empty line is not a row.
+   */
+  columns(columns: { name: string; width: number }[]): Pattern
+  columns(names: string[], options: { separatedBy: Piece }): Pattern
+  columns(spec: { name: string; width: number }[] | string[], options?: { separatedBy: Piece }): Pattern {
+    const where = 'columns()'
+    const checkNames = (names: string[]) => {
+      if (!names.length) throw new PatternError(`${where}: name at least one column`)
+      for (const n of names)
+        if (typeof n !== 'string' || !isIdentifier(n))
+          throw new PatternError(`${where}: a column name is an identifier, got ${JSON.stringify(n)}`)
+      if (new Set(names).size !== names.length) throw new PatternError(`${where}: a column name appears twice`)
+      return [...names]
+    }
+    const usage = "give [{ name: 'a', width: 10 }, …] (fixed width) or (['a', …], { separatedBy: ',' }) (delimited)"
+    if (!Array.isArray(spec) || !spec.length) throw new PatternError(`${where}: ${usage}`)
+    if (spec.every((c) => typeof c === 'string')) {
+      if (!options || options.separatedBy === undefined)
+        throw new PatternError(`${where}: say what separates the columns, e.g. columns(['a', 'b'], { separatedBy: ',' })`)
+      return this.#add({
+        kind: 'columns',
+        names: checkNames(spec as string[]),
+        widths: null,
+        separator: toNode(options.separatedBy, `${where} separatedBy`),
+      })
+    }
+    if (options !== undefined)
+      throw new PatternError(`${where}: fixed-width columns have no separator; ${usage}`)
+    const cols = spec.map((c, i) => {
+      if (!c || typeof c !== 'object') throw new PatternError(`${where} column ${i + 1}: ${usage}`)
+      const { name, width } = c as { name: unknown; width: unknown }
+      if (typeof width !== 'number' || !Number.isInteger(width) || width < 1)
+        throw new PatternError(`${where} column ${i + 1}: width is a whole number > 0, got ${String(width)}`)
+      return { name: name as string, width }
+    })
+    return this.#add({ kind: 'columns', names: checkNames(cols.map((c) => c.name)), widths: cols.map((c) => c.width), separator: null })
   }
   /** Everything from here to the end of the line, possibly nothing (regex `.*` without the s flag). */
   restOfLine(): Pattern {

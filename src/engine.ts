@@ -15,6 +15,7 @@
  */
 import type { Node } from './nodes'
 import { inRanges } from './chars'
+import { describe as describeNode } from './describe'
 
 export type Captures = Record<string, unknown>
 
@@ -101,6 +102,8 @@ export function expectation(node: Node): string {
       return 'a number'
     case 'integer':
       return 'an integer'
+    case 'columns':
+      return 'a row'
     case 'indentedBlock':
       return 'an indented block'
     case 'end':
@@ -356,6 +359,11 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
           const sep = match(node.separator, ctx, at)
           if (!sep) break
           const next = match(node.item, ctx, sep.end)
+          // A trailing separator (`a, b,`, a file's last line break) is consumed when allowed.
+          if (node.trailing && (!next || (next.end === sep.end && sep.end === input.length))) {
+            at = sep.end
+            break
+          }
           if (!next) break // the separator is not consumed without an item after it
           items.push(next.caps ?? next.value)
           if (next.end === at) break
@@ -364,6 +372,41 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       }
       if (items.length < node.min) return null
       return { end: at, caps: null, value: items }
+    }
+    case 'columns': {
+      const isBreak = (at: number) => at >= input.length || input[at] === '\n' || input[at] === '\r'
+      if (isBreak(pos)) return fail(ctx, pos, expectation(node)) // an empty line is not a row
+      const row: Record<string, string> = {}
+      const texts: Texts = {}
+      let at = pos
+      for (let i = 0; i < node.names.length; i++) {
+        const name = node.names[i]!
+        const from = at
+        if (node.widths) {
+          const stop = from + node.widths[i]!
+          while (at < stop && !isBreak(at)) {
+            step(ctx)
+            at++
+          }
+          texts[name] = input.slice(from, at)
+          row[name] = texts[name]!.trim()
+        } else {
+          const last = i === node.names.length - 1
+          ctx.quiet++
+          try {
+            while (!isBreak(at) && !(!last && match(node.separator!, ctx, at))) at++
+          } finally {
+            ctx.quiet--
+          }
+          texts[name] = row[name] = input.slice(from, at)
+          if (!last) {
+            const sep = match(node.separator!, ctx, at)
+            if (!sep) return fail(ctx, at, `${describeNode(node.separator!)} before ${node.names[i + 1]}`)
+            at = sep.end
+          }
+        }
+      }
+      return { end: at, caps: null, value: row }
     }
     case 'indentedBlock': {
       // Only at the end of a line: the block is the lines AFTER this one.

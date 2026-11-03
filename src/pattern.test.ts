@@ -319,6 +319,76 @@ group('lines, and blocks by indentation (Python, Markdown)', () => {
   })
 })
 
+group('columns, and one row per line', () => {
+  const fixed = pattern.lines(
+    pattern.columns([
+      { name: 'name', width: 10 },
+      { name: 'qty', width: 6 },
+      { name: 'price', width: 8 },
+    ])
+  )
+
+  it('fixed width: values trimmed of padding; a line may end early (editors strip trailing spaces)', () => {
+    const table = 'widget    12    3.50\ngadget    7     12.00\nbolt      100\n'
+    expect(fixed.parse(table).value).toEqual([
+      { name: 'widget', qty: '12', price: '3.50' },
+      { name: 'gadget', qty: '7', price: '12.00' },
+      { name: 'bolt', qty: '100', price: '' },
+    ])
+  })
+
+  it('a line longer than the columns is an error at the column, not silently cut', () => {
+    const r = fixed.parse('widget    12    3.50    extra')
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error.column).toBe(25)
+  })
+
+  it('delimited: values as written, every column required', () => {
+    const tsv = pattern.lines(pattern.columns(['name', 'qty'], { separatedBy: '\t' }))
+    expect(tsv.parse('a\t1\r\nb c\t\r\n').value).toEqual([
+      { name: 'a', qty: '1' },
+      { name: 'b c', qty: '' },
+    ])
+    const r = tsv.parse('a\t1\nb')
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error.message).toMatch(/before qty/)
+    // Aligned by runs of spaces: the separator is a pattern.
+    const ls = pattern.columns(['mode', 'size', 'file'], { separatedBy: pattern.blanks() })
+    expect(ls.find('-rw-r--r--   1024  notes.md')?.value).toEqual({ mode: '-rw-r--r--', size: '1024', file: 'notes.md' })
+  })
+
+  it('a header line, then the rows; a row captured by name', () => {
+    const table = pattern.restOfLine().lineBreak().lines(pattern.columns([{ name: 'n', width: 3 }])).as('rows')
+    expect(table.parse('N\n1\n22\n').captures.rows).toEqual([{ n: '1' }, { n: '22' }])
+  })
+
+  it('lines() alone is the lines, whichever convention ended them', () => {
+    expect(pattern.lines().parse('a\r\nb\rc\n').value).toEqual(['a', 'b', 'c'])
+    expect(pattern.lines().toCode()).toBe('pattern.lines()')
+  })
+
+  it('a trailing separator, when allowed', () => {
+    const args = pattern.listOf(pattern.wordChars(), { separatedBy: ',', trailing: true })
+    expect(args.parse('a,b,').value).toEqual(['a', 'b'])
+    expect(pattern.listOf(pattern.wordChars(), { separatedBy: ',' }).matches('a,b,')).toBe(false)
+  })
+
+  it('columns() refuses mistakes at the call', () => {
+    expect(() => pattern.columns([{ name: 'a', width: 0 }])).toThrow(/whole number > 0/)
+    expect(() => pattern.columns(['a', 'a'], { separatedBy: ',' })).toThrow(/appears twice/)
+    expect(() => pattern.columns(['a', 'b'] as any)).toThrow(/separates/)
+    expect(() => pattern.columns([{ name: '1x', width: 2 }])).toThrow(/identifier/)
+    expect(() => pattern.columns({ a: 3 } as any)).toThrow(/name: 'a', width: 10/)
+  })
+
+  it('toCode writes them back', () => {
+    const code = "pattern.lines(pattern.columns([{ name: 'name', width: 10 }, { name: 'qty', width: 6 }]))"
+    expect(run(code).toCode()).toBe(code)
+    const d = "pattern.columns(['a', 'b'], { separatedBy: '\\t' })"
+    expect(run(d).toCode()).toBe(d)
+  })
+})
+
 group('the step budget bounds the work', () => {
   it('a budget that is too small throws, naming the budget', () => {
     expect(() => pattern.anyChars().parse('x'.repeat(10_000), { maxSteps: 1_000 })).toThrow(PatternBudgetError)
@@ -454,6 +524,7 @@ const SAMPLES: Record<Kind, Node> = {
   balanced: { kind: 'balanced', open: '(', close: ')', quotes: '"', escape: null },
   separatedBy: { kind: 'separatedBy', item: lit, separator: { kind: 'literal', text: ',' }, min: 0 },
   indentedBlock: { kind: 'indentedBlock' },
+  columns: { kind: 'columns', names: ['a', 'b'], widths: [1, 2], separator: null },
   number: { kind: 'number' },
   integer: { kind: 'integer' },
 }

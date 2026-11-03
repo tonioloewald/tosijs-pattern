@@ -92,7 +92,10 @@ pattern does not have one. `text()` and `group()` add a step.
 | `until(p)` | everything up to the first `p` (`.*?` before `p`, without the retrying) |
 | `quoted('"', { escape })` | a quoted span; `escape` is a character or `'double'` (CSV's `""`); its value is the inside |
 | `balanced('(', ')', { quotes })` | a nested span that closes at its own delimiter, skipping quoted text; its value is the inside |
-| `listOf(item, { separatedBy, atLeast })` | a list; its value is an array |
+| `listOf(item, { separatedBy, atLeast, trailing })` | a list; its value is an array. `trailing: true` allows a final separator (`a, b,`) |
+| `lines(row)` | one `row` per line, a final line break allowed; its value is the list of rows. `lines()` alone is the lines' text |
+| `columns([{ name, width }, …])` | one row of fixed-width columns; each value is trimmed of padding, and a line may end early (editors strip trailing spaces) |
+| `columns([name, …], { separatedBy })` | one row of delimited columns (`'\t'`, `','`, or a pattern such as `pattern.blanks()`); values as written |
 | `restOfLine()` | everything up to the line break, possibly nothing (regex `.*` without `s`) |
 | `indentedBlock()` | at the end of a line, the lines after it indented DEEPER than it (a Python body, a Markdown list item's continuation), blank lines between them included; it stops before the first line indented the same or less. Its value is the lines with their common indentation removed, so it can be parsed again |
 | `number()`, `integer()` | JSON's number grammar; the value is a number |
@@ -109,6 +112,26 @@ const found = def.find(source)
 
 show(preview, { 'def.describe()': def.describe(), 'found.captures': found.captures })
 ```
+
+A fixed-width table, after its header line:
+
+```js
+import { pattern } from 'tosijs-pattern'
+import { show } from 'tosijs-pattern/demo'
+
+const report = 'NAME      QTY   PRICE\nwidget    12    3.50\ngadget    7     12.00\nbolt      100\n'
+const rows = pattern.columns([
+  { name: 'name', width: 10 },
+  { name: 'qty', width: 6 },
+  { name: 'price', width: 8 },
+])
+const table = pattern.restOfLine().lineBreak().lines(rows).as('rows')
+
+show(preview, { 'table.parse(report).captures.rows': table.parse(report).captures.rows })
+```
+
+A row is never silently cut: a line longer than its columns is a parse error at the column
+where it runs over.
 
 ## Values and captures
 

@@ -84,6 +84,10 @@ export function describe(node: Node): string {
       return `a balanced ${node.open}…${node.close} group${
         node.quotes ? ` (skipping text in ${node.quotes.split('').join(' or ')} quotes)` : ''
       }`
+    case 'columns':
+      return node.widths
+        ? `a row of columns ${node.names.map((n, i) => `${n} (${node.widths![i]} wide)`).join(', ')}`
+        : `a row of ${node.names.join(', ')} separated by ${group(node.separator!)}`
     case 'separatedBy':
       return `${node.min ? `at least ${node.min} of ` : ''}${group(node.item)} separated by ${group(node.separator)}`
     case 'indentedBlock':
