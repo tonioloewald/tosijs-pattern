@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    document.documentElement.classList.add('tosi-js')
+    document.addEventListener('click', function (e) {
+      if (customElements.get('tosi-doc-system')) return
+      var b = e.target.closest && e.target.closest('.doc-nav .nav-toggle')
+      if (!b) return
+      var open = b.closest('.nav-branch').classList.toggle('-open')
+      b.setAttribute('aria-expanded', String(open))
+    })
+    try {
+      var p = JSON.parse(localStorage.getItem('tosi-doc-system-prefs') || '{}')
+      var t = p.theme || 'system'
+      if (t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches))
+        document.documentElement.classList.add('darkmode')
+      if (p.highContrast) document.documentElement.classList.add('high-contrast')
+    } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="../doc-system.css?v=59a07711e5dd" data-tosi-doc-system />
+  <title>Guide — tosijs-pattern</title>
+  <meta name="description" content="Using tosijs-pattern: the vocabulary, and turning existing regexes into patterns." />
+  <link rel="canonical" href="https://pattern.tosijs.net/guide/" />
+  <link rel="alternate" type="text/markdown" href="index.md" title="Guide — tosijs-pattern (markdown)" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="tosijs-pattern" />
+  <meta property="og:title" content="Guide — tosijs-pattern" />
+  <meta property="og:description" content="Using tosijs-pattern: the vocabulary, and turning existing regexes into patterns." />
+  <meta property="og:url" content="https://pattern.tosijs.net/guide/" />
+  <meta name="twitter:card" content="summary" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Guide","description":"Using tosijs-pattern: the vocabulary, and turning existing regexes into patterns.","url":"https://pattern.tosijs.net/guide/","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"tosijs-pattern","url":"https://pattern.tosijs.net"}}</script>
+  <link rel="icon" href="../favicon.svg" />
+<script>globalThis.__TJS_LOCAL_BASE="/tjs/"</script>
+</head>
+<body>
+  <tosi-doc-system docs="../docs.json?v=8ff0ddd8fbe8" config="{&quot;projectName&quot;:&quot;tosijs-pattern&quot;,&quot;projectLinks&quot;:{&quot;tosijs&quot;:&quot;https://tosijs.net&quot;,&quot;github&quot;:&quot;https://github.com/tonioloewald/tosijs-pattern&quot;},&quot;ebooks&quot;:[]}">
+  <article class="doc-content" data-doc="guide.md">
+<!--{"order": 10, "description": "Using tosijs-pattern: the vocabulary, and turning existing regexes into patterns."}--><h1 id="guide">Guide</h1>
+<p>How to write patterns, and how to bring the regexes you already have.</p>
+<!-- toc -->
+<ul>
+<li><a href="/vocabulary/">Vocabulary</a></li>
+<li><a href="/from-regex/">From regex</a></li>
+</ul>
+<!-- /toc -->
+
+  </article>
+  <nav class="doc-nav" aria-label="Documentation">
+  <ul>
+    <li><a class="doc-link" href="../">tosijs-pattern</a></li>
+    <li class="nav-branch -open"><div class="nav-branch-head"><button type="button" class="nav-toggle" aria-expanded="true" aria-controls="tosi-nav-guide" aria-label="Guide"></button><a class="doc-link current" href="../guide/" aria-current="page">Guide</a></div>
+    <ul id="tosi-nav-guide">
+      <li><a class="doc-link" href="../vocabulary/">Vocabulary</a></li>
+      <li><a class="doc-link" href="../from-regex/">From regex</a></li>
+    </ul></li>
+    <li class="nav-branch"><div class="nav-branch-head"><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="tosi-nav-design" aria-label="Design"></button><a class="doc-link" href="../design/">Design</a></div>
+    <ul id="tosi-nav-design">
+      <li><a class="doc-link" href="../performance/">Performance</a></li>
+      <li><a class="doc-link" href="../formal/">A formal specification in Lean 4</a></li>
+    </ul></li>
+  </ul>
+  </nav>
+  <ul class="doc-navbar">
+    <li><a href="https://tosijs.net" data-icon="tosi">tosijs</a></li>
+    <li><a href="https://github.com/tonioloewald/tosijs-pattern" data-icon="github">github</a></li>
+    <li><a href="https://www.npmjs.com/package/tosijs-pattern" data-icon="npm">npmjs</a></li>
+  </ul>
+  </tosi-doc-system>
+  <script type="module" src="../hydrate-kgd6kdqb.js"></script>
+</body>
+</html>

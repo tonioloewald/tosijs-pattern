@@ -13,7 +13,10 @@ import { show } from 'tosijs-pattern/demo'
 const identifier = pattern.letter().optional(pattern.wordChars())
 const flag = pattern.text('--').group(identifier).as('name').optional(pattern.text('=').charsIn('a-z0-9').as('value'))
 
-show(preview, flag.describe(), flag.parse('--level=9').captures)
+show(preview, {
+  'flag.describe()': flag.describe(),
+  "flag.parse('--level=9').captures": flag.parse('--level=9').captures,
+})
 ```
 
 Everything starts from `pattern`, the empty pattern. Each method returns a NEW pattern with
@@ -104,7 +107,7 @@ import { show } from 'tosijs-pattern/demo'
 const pair = pattern.letters().as('key').text('=').integer().as('value').optional(';')
 const settings = pattern.oneOrMore(pair).as('settings')
 
-show(preview, settings.parse('width=3;height=4').captures)
+show(preview, { "settings.parse('width=3;height=4').captures": settings.parse('width=3;height=4').captures })
 ```
 
 Beside its value, every capture keeps the TEXT it matched, as written: `texts` on a parse

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    document.documentElement.classList.add('tosi-js')
+    document.addEventListener('click', function (e) {
+      if (customElements.get('tosi-doc-system')) return
+      var b = e.target.closest && e.target.closest('.doc-nav .nav-toggle')
+      if (!b) return
+      var open = b.closest('.nav-branch').classList.toggle('-open')
+      b.setAttribute('aria-expanded', String(open))
+    })
+    try {
+      var p = JSON.parse(localStorage.getItem('tosi-doc-system-prefs') || '{}')
+      var t = p.theme || 'system'
+      if (t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches))
+        document.documentElement.classList.add('darkmode')
+      if (p.highContrast) document.documentElement.classList.add('high-contrast')
+    } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="doc-system.css?v=59a07711e5dd" data-tosi-doc-system />
+  <title>tosijs-pattern</title>
+  <meta name="description" content="Matching that reads like what it means: a fluent, declarative alternative to regular expressions, with no backtracking and a step budget." />
+  <link rel="canonical" href="https://pattern.tosijs.net/" />
+  <link rel="alternate" type="text/markdown" href="index.md" title="tosijs-pattern (markdown)" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="tosijs-pattern" />
+  <meta property="og:title" content="tosijs-pattern" />
+  <meta property="og:description" content="Matching that reads like what it means: a fluent, declarative alternative to regular expressions, with no backtracking and a step budget." />
+  <meta property="og:url" content="https://pattern.tosijs.net/" />
+  <meta name="twitter:card" content="summary" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"tosijs-pattern","description":"Matching that reads like what it means: a fluent, declarative alternative to regular expressions, with no backtracking and a step budget.","url":"https://pattern.tosijs.net/","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"tosijs-pattern","url":"https://pattern.tosijs.net"}}</script>
+  <link rel="icon" href="favicon.svg" />
+<script>globalThis.__TJS_LOCAL_BASE="/tjs/"</script>
+</head>
+<body>
+  <tosi-doc-system docs="docs.json?v=8ff0ddd8fbe8" config="{&quot;projectName&quot;:&quot;tosijs-pattern&quot;,&quot;projectLinks&quot;:{&quot;tosijs&quot;:&quot;https://tosijs.net&quot;,&quot;github&quot;:&quot;https://github.com/tonioloewald/tosijs-pattern&quot;},&quot;ebooks&quot;:[]}">
+  <article class="doc-content" data-doc="README.md">
+<!--{"pin": "top", "description": "Matching that reads like what it means: a fluent, declarative alternative to regular expressions, with no backtracking and a step budget."}--><h1 id="tosijs-pattern">tosijs-pattern</h1>
+<p><strong>Matching that reads like what it means.</strong></p>
+<p>A good regex programmer reads <code>^\d{3}-\d{4}$</code> aloud as &quot;three digits, a dash, four digits&quot;.
+Almost nobody else can, and nobody can read it at a glance once it grows. tosijs-pattern
+writes the reading down:</p>
+<pre><code class="language-js">import { pattern } from &#39;tosijs-pattern&#39;
+import { show } from &#39;tosijs-pattern/demo&#39;
+
+const phone = pattern.start().digits(3).text(&#39;-&#39;).digits(4).end()
+
+show(preview, {
+  &#39;phone.describe()&#39;: phone.describe(),
+  &quot;phone.matches(&#39;555-1234&#39;)&quot;: phone.matches(&#39;555-1234&#39;),
+  &quot;phone.matches(&#39;55-1234&#39;)&quot;: phone.matches(&#39;55-1234&#39;),
+})
+</code></pre>
+<p>One import. A chain reads in the order it matches, and your editor&#39;s autocomplete lists the
+whole vocabulary after <code>pattern.</code>. Every pattern can also say what it is (<code>describe()</code>). Text
+is always literal, so there is nothing to escape, ever. And when something does not match, it
+says where and why:</p>
+<pre><code class="language-js">import { pattern } from &#39;tosijs-pattern&#39;
+import { show } from &#39;tosijs-pattern/demo&#39;
+
+const price = pattern.text(&#39;price:&#39;).optional(pattern.whitespace()).number().as(&#39;amount&#39;)
+
+show(preview, {
+  &quot;price.parse(&#39;price: 42.50&#39;).captures&quot;: price.parse(&#39;price: 42.50&#39;).captures, // a number
+  &quot;price.parse(&#39;price: forty&#39;).error.message&quot;: price.parse(&#39;price: forty&#39;).error.message,
+})
+</code></pre>
+<h2 id="regex-read-aloud">Regex, read aloud</h2>
+<table>
+<thead>
+<tr>
+<th>Regex</th>
+<th>Pattern</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>\d</code></td>
+<td><code>pattern.digit()</code></td>
+</tr>
+<tr>
+<td><code>\d+</code></td>
+<td><code>pattern.digits()</code></td>
+</tr>
+<tr>
+<td><code>\d{4}</code></td>
+<td><code>pattern.digits(4)</code></td>
+</tr>
+<tr>
+<td><code>[a-f0-9]{6}</code></td>
+<td><code>pattern.charsIn(&#39;a-f0-9&#39;, 6)</code></td>
+</tr>
+<tr>
+<td><code>\s*</code></td>
+<td><code>pattern.optional(pattern.whitespace())</code></td>
+</tr>
+<tr>
+<td><code>(,\s*)?</code></td>
+<td><code>pattern.optional(pattern.text(&#39;,&#39;).optional(pattern.whitespace()))</code></td>
+</tr>
+<tr>
+<td><code>yes|no</code></td>
+<td><code>pattern.oneOf(&#39;yes&#39;, &#39;no&#39;)</code></td>
+</tr>
+<tr>
+<td><code>(?&lt;year&gt;\d{4})</code></td>
+<td><code>pattern.digits(4).as(&#39;year&#39;)</code></td>
+</tr>
+<tr>
+<td><code>(?!_)</code></td>
+<td><code>pattern.ifNotFollowedBy(&#39;_&#39;)</code></td>
+</tr>
+<tr>
+<td><code>.*?--&gt;</code></td>
+<td><code>pattern.until(&#39;--&gt;&#39;)</code></td>
+</tr>
+<tr>
+<td><code>^…$</code></td>
+<td><code>pattern.start()….end()</code></td>
+</tr>
+</tbody></table>
+<p>The rules, which are meant to be guessable without reading them:</p>
+<ul>
+<li><strong>A singular noun is one character, a plural is one or more</strong>, and a count says how many:
+<code>digit()</code>, <code>digits()</code>, <code>digits(4)</code>, <code>digits(2, 4)</code>, <code>digits(2, Infinity)</code>. The nouns are
+<code>digit</code>, <code>hexDigit</code>, <code>letter</code>, <code>lowercaseLetter</code>, <code>uppercaseLetter</code>, <code>wordChar</code>,
+<code>whitespace</code>, <code>blank</code>, <code>anyChar</code>, <code>lineBreak</code>, and <code>charIn(&#39;a-z&#39;)</code> / <code>charNotIn(&#39;,\n&#39;)</code> for
+your own.</li>
+<li><strong>Text is <code>text(&#39;…&#39;)</code></strong>, and a string given to any method (<code>oneOf(&#39;yes&#39;, &#39;no&#39;)</code>) is text too.</li>
+<li><strong>Nest by starting another chain from <code>pattern</code></strong>: <code>pattern.optional(pattern.text(&#39;.&#39;).digits())</code>.</li>
+<li><strong><code>.as(name)</code> captures the step just before it.</strong> <code>.group(…)</code> makes a chain one step, so
+<code>.group(pattern.digits().text(&#39;.&#39;).digits()).as(&#39;version&#39;)</code> captures all of it.</li>
+</ul>
+<p>The full list is in <a href="docs-src/vocabulary.md">the vocabulary</a>.</p>
+<h2 id="any-regex-as-code-you-can-read">Any regex, as code you can read</h2>
+<p><code>fromRegex()</code> turns a regex into a pattern where it can prove the two match the same, and
+<code>toCode()</code> writes any pattern as the chain that builds it. Together they explain an inherited
+regex, and replace it:</p>
+<pre><code class="language-js">import { fromRegex } from &#39;tosijs-pattern&#39;
+import { show } from &#39;tosijs-pattern/demo&#39;
+
+const version = fromRegex(/^v(?&lt;major&gt;\d+)\.(?&lt;minor&gt;\d+)$/)
+
+show(preview, { &#39;version.toCode()&#39;: version.toCode(), &#39;version.describe()&#39;: version.describe() })
+</code></pre>
+<p>Where a regex only works by backtracking, it is refused with the reason and what to write
+instead. See <a href="docs-src/from-regex.md">From regex</a>.</p>
+<h2 id="what-regex-cannot-do">What regex cannot do</h2>
+<p>Some of the most common reasons people reach for a regex are things a regex cannot actually
+do: a quoted string with escapes, a list separated by commas, a nested <code>(…)</code> that closes at its
+own parenthesis. People write a regex anyway, and it is wrong on the edge cases. These are
+named pieces here.</p>
+<p>CSV, correctly (quoted fields, doubled quotes inside them, commas and line breaks inside quotes):</p>
+<pre><code class="language-js">import { pattern } from &#39;tosijs-pattern&#39;
+import { show } from &#39;tosijs-pattern/demo&#39;
+
+const field = pattern.oneOf(pattern.quoted(&#39;&quot;&#39;, { escape: &#39;double&#39; }), pattern.optional(pattern.charsNotIn(&#39;,\n&#39;)))
+const row = pattern.listOf(field, { separatedBy: &#39;,&#39; }).as(&#39;fields&#39;)
+const csv = pattern.listOf(row, { separatedBy: &#39;\n&#39; }).as(&#39;rows&#39;)
+
+show(preview, { &#39;the rows&#39;: csv.parse(&#39;name,said\n&quot;Ada&quot;,&quot;she said &quot;&quot;hi&quot;&quot;, then left&quot;&#39;).captures })
+</code></pre>
+<p>A function call&#39;s arguments, nested and quote-aware. No regex can match this, because balanced
+delimiters are not a regular language:</p>
+<pre><code class="language-js">import { pattern } from &#39;tosijs-pattern&#39;
+import { show } from &#39;tosijs-pattern/demo&#39;
+
+const call = pattern.wordChars().as(&#39;fn&#39;).balanced(&#39;(&#39;, &#39;)&#39;, { quotes: &#39;&quot;\&#39;&#39; }).as(&#39;args&#39;)
+
+show(preview, { &#39;the call&#39;: call.find(&#39;x = f(a, g(b), &quot;)&quot;) + 1&#39;).captures })
+</code></pre>
+<h2 id="search-and-replace">Search and replace</h2>
+<pre><code class="language-js">import { pattern } from &#39;tosijs-pattern&#39;
+import { show } from &#39;tosijs-pattern/demo&#39;
+
+const dollars = pattern.text(&#39;$&#39;).number().as(&#39;amount&#39;)
+
+show(preview, {
+  &#39;the amounts (values)&#39;: dollars.findAll(&#39;was $5, now $3.50&#39;).map((m) =&gt; m.captures.amount),
+  &quot;replaceAll(…, &#39;{amount} USD&#39;)&quot;: dollars.replaceAll(&#39;was $5, now $3.50&#39;, &#39;{amount} USD&#39;),
+})
+</code></pre>
+<p>The values are numbers (<code>5</code>, <code>3.5</code>), but a template inserts each capture&#39;s matched TEXT, so
+<code>$3.50</code> becomes <code>3.50 USD</code>. A function replacement gets both: <code>m.captures</code> (values) and
+<code>m.texts</code> (the text as written).</p>
+<p><code>find</code>, <code>findAll</code>, <code>occursIn</code>, <code>replaceFirst</code>, <code>replaceAll</code> (a <code>{name}</code> template or a function),
+<code>split</code>, <code>matches</code> (the whole string) and <code>parse</code> (the whole string, with an error that says
+where).</p>
+<h2 id="how-it-matches-and-why-it-is-safe">How it matches, and why it is safe</h2>
+<ul>
+<li><strong>No backtracking.</strong> Repetition takes as much as it can and never gives it back, and
+<code>oneOf</code> takes the first option that matches. So a pattern&#39;s cost is visible from its shape,
+and there is no catastrophic case: the exponential blow-ups behind regex denial of service
+(ReDoS) cannot happen. The difference shows in exactly one place, and it is a feature:
+<code>pattern.digits().text(&#39;5&#39;)</code> does not match <code>&quot;1235&quot;</code>, because the digits took the 5.
+A regex finds that match only by retrying; here, a pattern that would need retrying is one
+that has not said what it means.</li>
+<li><strong>A step budget.</strong> Every call counts its work and stops at <code>maxSteps</code>
+(default 10 million) with a <code>PatternBudgetError</code>, so the worst case is the caller&#39;s choice.</li>
+<li><strong>Patterns are data.</strong> <code>toJSON()</code> gives plain JSON and <code>fromJSON()</code> reads it back,
+validating every node, so a pattern can be stored, sent, and accepted from someone you do not
+trust: there is no code in it.</li>
+<li><strong>No RegExp inside.</strong> Character sets are code-point ranges; matching is loops.</li>
+</ul>
+<h2 id="status">Status</h2>
+<p><code>0.1.0-dev</code>: the vocabulary, the engine, and <code>fromRegex()</code>, which translates a regex where it
+can prove the pattern equivalent and refuses it, with the reason, where it cannot (two thirds of
+tjs-lang&#39;s own regexes translate; see <a href="docs-src/from-regex.md">From regex</a>). Not yet published.
+Next: a look-behind piece (the largest refusal), a code-editing mode and CLI, and the AsyncJS
+(tjs-lang) builtin. <a href="CLAUDE.md">CLAUDE.md</a> has the plan.</p>
+
+  </article>
+  <nav class="doc-nav" aria-label="Documentation">
+  <ul>
+    <li><a class="doc-link current" href="./" aria-current="page">tosijs-pattern</a></li>
+    <li class="nav-branch"><div class="nav-branch-head"><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="tosi-nav-guide" aria-label="Guide"></button><a class="doc-link" href="guide/">Guide</a></div>
+    <ul id="tosi-nav-guide">
+      <li><a class="doc-link" href="vocabulary/">Vocabulary</a></li>
+      <li><a class="doc-link" href="from-regex/">From regex</a></li>
+    </ul></li>
+    <li class="nav-branch"><div class="nav-branch-head"><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="tosi-nav-design" aria-label="Design"></button><a class="doc-link" href="design/">Design</a></div>
+    <ul id="tosi-nav-design">
+      <li><a class="doc-link" href="performance/">Performance</a></li>
+      <li><a class="doc-link" href="formal/">A formal specification in Lean 4</a></li>
+    </ul></li>
+  </ul>
+  </nav>
+  <ul class="doc-navbar">
+    <li><a href="https://tosijs.net" data-icon="tosi">tosijs</a></li>
+    <li><a href="https://github.com/tonioloewald/tosijs-pattern" data-icon="github">github</a></li>
+    <li><a href="https://www.npmjs.com/package/tosijs-pattern" data-icon="npm">npmjs</a></li>
+  </ul>
+  </tosi-doc-system>
+  <script type="module" src="hydrate-kgd6kdqb.js"></script>
+</body>
+</html>

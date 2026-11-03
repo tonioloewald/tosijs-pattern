@@ -14,11 +14,15 @@ import { show } from 'tosijs-pattern/demo'
 
 const phone = pattern.start().digits(3).text('-').digits(4).end()
 
-show(preview, phone.describe(), phone.matches('555-1234'), phone.matches('55-1234'))
+show(preview, {
+  'phone.describe()': phone.describe(),
+  "phone.matches('555-1234')": phone.matches('555-1234'),
+  "phone.matches('55-1234')": phone.matches('55-1234'),
+})
 ```
 
-One import. A chain reads in the order it matches, and your editor's autocomplete lists the
-whole vocabulary after `pattern.`. Every pattern can also say what it is (`describe()`). Text
+One import. A chain reads in the order it matches, and typing `pattern.` lists the whole
+vocabulary in your editor's autocomplete. Every pattern can also say what it is (`describe()`). Text
 is always literal, so there is nothing to escape, ever. And when something does not match, it
 says where and why:
 
@@ -28,11 +32,10 @@ import { show } from 'tosijs-pattern/demo'
 
 const price = pattern.text('price:').optional(pattern.whitespace()).number().as('amount')
 
-show(
-  preview,
-  price.parse('price: 42.50').captures,   // { amount: 42.5 }, a number
-  price.parse('price: forty').error.message
-)
+show(preview, {
+  "price.parse('price: 42.50').captures": price.parse('price: 42.50').captures, // a number
+  "price.parse('price: forty').error.message": price.parse('price: forty').error.message,
+})
 ```
 
 ## Regex, read aloud
@@ -77,7 +80,7 @@ import { show } from 'tosijs-pattern/demo'
 
 const version = fromRegex(/^v(?<major>\d+)\.(?<minor>\d+)$/)
 
-show(preview, version.toCode(), version.describe())
+show(preview, { 'version.toCode()': version.toCode(), 'version.describe()': version.describe() })
 ```
 
 Where a regex only works by backtracking, it is refused with the reason and what to write
@@ -100,7 +103,7 @@ const field = pattern.oneOf(pattern.quoted('"', { escape: 'double' }), pattern.o
 const row = pattern.listOf(field, { separatedBy: ',' }).as('fields')
 const csv = pattern.listOf(row, { separatedBy: '\n' }).as('rows')
 
-show(preview, csv.parse('name,said\n"Ada","she said ""hi"", then left"').captures)
+show(preview, { 'the rows': csv.parse('name,said\n"Ada","she said ""hi"", then left"').captures })
 ```
 
 A function call's arguments, nested and quote-aware. No regex can match this, because balanced
@@ -112,7 +115,7 @@ import { show } from 'tosijs-pattern/demo'
 
 const call = pattern.wordChars().as('fn').balanced('(', ')', { quotes: '"\'' }).as('args')
 
-show(preview, call.find('x = f(a, g(b), ")") + 1').captures)
+show(preview, { 'the call': call.find('x = f(a, g(b), ")") + 1').captures })
 ```
 
 ## Search and replace
@@ -123,11 +126,10 @@ import { show } from 'tosijs-pattern/demo'
 
 const dollars = pattern.text('$').number().as('amount')
 
-show(
-  preview,
-  dollars.findAll('was $5, now $3.50').map((m) => m.captures.amount),
-  dollars.replaceAll('was $5, now $3.50', '{amount} USD')
-)
+show(preview, {
+  'the amounts (values)': dollars.findAll('was $5, now $3.50').map((m) => m.captures.amount),
+  "replaceAll(…, '{amount} USD')": dollars.replaceAll('was $5, now $3.50', '{amount} USD'),
+})
 ```
 
 The values are numbers (`5`, `3.5`), but a template inserts each capture's matched TEXT, so

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    document.documentElement.classList.add('tosi-js')
+    document.addEventListener('click', function (e) {
+      if (customElements.get('tosi-doc-system')) return
+      var b = e.target.closest && e.target.closest('.doc-nav .nav-toggle')
+      if (!b) return
+      var open = b.closest('.nav-branch').classList.toggle('-open')
+      b.setAttribute('aria-expanded', String(open))
+    })
+    try {
+      var p = JSON.parse(localStorage.getItem('tosi-doc-system-prefs') || '{}')
+      var t = p.theme || 'system'
+      if (t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches))
+        document.documentElement.classList.add('darkmode')
+      if (p.highContrast) document.documentElement.classList.add('high-contrast')
+    } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="../doc-system.css?v=59a07711e5dd" data-tosi-doc-system />
+  <title>From regex — tosijs-pattern</title>
+  <meta name="description" content="fromRegex(): translate a regex into an equivalent pattern where that is provable, or refuse it with the reason. With the numbers over real code." />
+  <link rel="canonical" href="https://pattern.tosijs.net/from-regex/" />
+  <link rel="alternate" type="text/markdown" href="index.md" title="From regex — tosijs-pattern (markdown)" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="tosijs-pattern" />
+  <meta property="og:title" content="From regex — tosijs-pattern" />
+  <meta property="og:description" content="fromRegex(): translate a regex into an equivalent pattern where that is provable, or refuse it with the reason. With the numbers over real code." />
+  <meta property="og:url" content="https://pattern.tosijs.net/from-regex/" />
+  <meta name="twitter:card" content="summary" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"From regex","description":"fromRegex(): translate a regex into an equivalent pattern where that is provable, or refuse it with the reason. With the numbers over real code.","url":"https://pattern.tosijs.net/from-regex/","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"tosijs-pattern","url":"https://pattern.tosijs.net"}}</script>
+  <link rel="icon" href="../favicon.svg" />
+<script>globalThis.__TJS_LOCAL_BASE="/tjs/"</script>
+</head>
+<body>
+  <tosi-doc-system docs="../docs.json?v=8ff0ddd8fbe8" config="{&quot;projectName&quot;:&quot;tosijs-pattern&quot;,&quot;projectLinks&quot;:{&quot;tosijs&quot;:&quot;https://tosijs.net&quot;,&quot;github&quot;:&quot;https://github.com/tonioloewald/tosijs-pattern&quot;},&quot;ebooks&quot;:[]}">
+  <article class="doc-content" data-doc="from-regex.md">
+<!--{"parent": "Guide", "order": 20, "description": "fromRegex(): translate a regex into an equivalent pattern where that is provable, or refuse it with the reason. With the numbers over real code."}--><h1 id="from-regex">From regex</h1>
+<p><strong>Status: built (2026-11-03).</strong> <code>fromRegex()</code> translates a regex where it can prove the result
+is equivalent, and otherwise <strong>refuses it, with the reason</strong>. Over tjs-lang&#39;s own source, <strong>67%
+of regexes translate, and every translation agrees with its regex</strong> on generated inputs; the
+largest refusal is not backtracking but looking behind (<code>\b</code>, multiline <code>^</code>, lookbehind: 21%).
+The numbers are in <code>reports/from-regex-2026-11-03.md</code>.</p>
+<pre><code class="language-js">import { fromRegex } from &#39;tosijs-pattern&#39;
+import { show } from &#39;tosijs-pattern/demo&#39;
+
+const version = fromRegex(/^v(?&lt;major&gt;\d+)\.(?&lt;minor&gt;\d+)$/)
+let refusal
+try {
+  fromRegex(/\d+5/)
+} catch (e) {
+  refusal = `${e.code}: ${e.message}`
+}
+show(preview, {
+  &#39;version.toCode()&#39;: version.toCode(),
+  &#39;version.describe()&#39;: version.describe(),
+  &quot;version.parse(&#39;v2.13&#39;).captures&quot;: version.parse(&#39;v2.13&#39;).captures,
+  &#39;fromRegex(/\\d+5/) is refused&#39;: refusal,
+})
+</code></pre>
+<p><code>toCode()</code> writes the translation as the chain that builds it, so a regex comes back as code
+you can read, paste, and keep. A translation has the regex&#39;s SEARCH semantics (<code>find</code>, <code>findAll</code>, <code>replaceAll</code>, …). Unnamed
+groups capture as <code>$1</code>, <code>$2</code>; named groups by name. A refusal is a <code>RegexRefusal</code> with a stable
+<code>code</code>, the offset <code>at</code> in the source, and a <code>suggestion</code>. Pattern reads code points, so a regex
+WITHOUT the <code>u</code> flag (which reads UTF-16 units) can differ on characters beyond the BMP, and
+nowhere else.</p>
+<p>People, and language models especially, write regex fluently. So the plan is to keep accepting
+regex as INPUT while only ever running Pattern. A host (the tjs-lang AsyncJS VM is the first)
+takes a regex literal, translates it at compile time, and runs the result. A regex that cannot be
+translated faithfully never runs; the author gets a message that names the problem and the
+Pattern piece to use instead.</p>
+<h2 id="why-translation-is-not-just-syntax">Why translation is not just syntax</h2>
+<p>Regex backtracks; Pattern does not. Syntax maps one-to-one, but the meaning only matches when the
+backtracking could never have changed the outcome:</p>
+<ul>
+<li><code>\d+5</code> on <code>&quot;1235&quot;</code>: the regex gives back the 5 and matches; <code>pattern.digits().text(&#39;5&#39;)</code>
+does not.</li>
+<li><code>a|ab</code> followed by <code>c</code>, on <code>&quot;abc&quot;</code>: the regex tries <code>ab</code> after <code>a</code> fails later; <code>oneOf(&#39;a&#39;, &#39;ab&#39;)</code> does not.</li>
+</ul>
+<p>So the translator proves, per site, that possessive and ordered semantics give the same answer,
+and refuses when it cannot. The proof is a local check:</p>
+<ol>
+<li><strong>A repetition</strong> is safe when nothing that can follow it can start with a character it could
+have consumed (the &quot;first set&quot; of what follows does not overlap the repeated item&#39;s). <code>\d+-</code>
+is safe (a digit is never a <code>-</code>); <code>\d+5</code> is not.</li>
+<li><strong>An alternation</strong> is safe when no option can match where an earlier one already matched a
+prefix of it (in practice, when their first characters differ, or the longer comes first,
+which the translator can reorder only when that is provably equivalent).</li>
+<li>Where the check fails, the translator looks for the STRUCTURE the backtracking was standing
+in for, and names it:<ul>
+<li><code>.*?X</code> and <code>.*X</code> before a literal become <code>.until(X)</code>.</li>
+<li><code>&quot;(?:[^&quot;\\]|\\.)*&quot;</code> becomes <code>.quoted(&#39;&quot;&#39;, { escape: &#39;\\&#39; })</code>.</li>
+<li><code>[^,]*(?:,[^,]*)*</code> becomes <code>.listOf(…, { separatedBy: &#39;,&#39; })</code>.</li>
+</ul>
+</li>
+<li>Anything else is refused: &quot;<code>\d+5</code>: the repetition can consume what follows it, so this regex
+only matches by retrying. Say where the digits stop: …&quot;.</li>
+</ol>
+<h2 id="the-rest-of-the-mapping">The rest of the mapping</h2>
+<table>
+<thead>
+<tr>
+<th>Regex</th>
+<th>Pattern</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>(?=x)</code>, <code>(?!x)</code></td>
+<td><code>ifFollowedBy</code>, <code>ifNotFollowedBy</code></td>
+<td>direct</td>
+</tr>
+<tr>
+<td><code>(?&lt;=x)</code>, <code>(?&lt;!x)</code></td>
+<td>refused</td>
+<td>0.5% of regexes in our census; a lookbehind usually stands in for a capture</td>
+</tr>
+<tr>
+<td><code>\1</code>, <code>\k&lt;n&gt;</code></td>
+<td>refused</td>
+<td>backreferences are memory, not matching; 3%</td>
+</tr>
+<tr>
+<td>lazy <code>*?</code>, <code>+?</code></td>
+<td><code>until(…)</code> when followed by a literal, else refused</td>
+<td>7%</td>
+</tr>
+<tr>
+<td><code>i</code> flag</td>
+<td><code>anyCase</code> / both-case ranges</td>
+<td></td>
+</tr>
+<tr>
+<td><code>m</code> flag</td>
+<td><code>lineStart</code> / <code>lineEnd</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>s</code> flag</td>
+<td><code>anyChar()</code>; without it, <code>.</code> is <code>charNotIn</code> the line terminators</td>
+<td></td>
+</tr>
+<tr>
+<td><code>g</code> flag</td>
+<td>the operation (<code>findAll</code>, <code>replaceAll</code>)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>y</code> flag</td>
+<td><code>find</code> at a position</td>
+<td></td>
+</tr>
+<tr>
+<td><code>u</code> flag</td>
+<td>always on: code points</td>
+<td></td>
+</tr>
+</tbody></table>
+<h2 id="what-it-found">What it found</h2>
+<table>
+<thead>
+<tr>
+<th>Corpus</th>
+<th align="right">Regexes</th>
+<th align="right">Translated (all agree)</th>
+<th align="right">Refused: looks behind</th>
+<th align="right">Refused: backtracking</th>
+<th align="right">Other</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>tjs-lang&#39;s source</td>
+<td align="right">916</td>
+<td align="right">67.1%</td>
+<td align="right">20.9%</td>
+<td align="right">11.1%</td>
+<td align="right">0.9%</td>
+</tr>
+<tr>
+<td>a large <code>node_modules</code></td>
+<td align="right">5,372</td>
+<td align="right">53.2%</td>
+<td align="right">26.3%</td>
+<td align="right">16.1%</td>
+<td align="right">4.4%</td>
+</tr>
+</tbody></table>
+<p>&quot;Looks behind&quot; is <code>\b</code>, <code>^</code> with the <code>m</code> flag, and lookbehind: each asks about the character
+BEFORE the position, which Pattern cannot yet. A <code>precededBy</code> piece would recover most of it;
+that is the next decision.</p>
+<h2 id="how-much-will-translate-the-plan-before-measuring">How much will translate? The plan, before measuring</h2>
+<p>A census of the 7,926 distinct regex literals in a large <code>node_modules</code> (2026-11-02; mostly
+developer tooling, so lexer-heavy) found: quantifiers in 76%, character classes 60%,
+alternation 45%, capture groups 40%, lookahead 15%, lazy quantifiers 7%, backreferences 3%,
+lookbehind 0.5%. Only about 13% were simple enough for plain string methods.</p>
+<p>That population is not the one that matters most. <strong>The first job of the translator is to report,
+over a corpus, what share translates and why the rest is refused,</strong> run over:</p>
+<ol>
+<li>that census (the script is <code>scripts/regex-census.ts</code> once it is moved here);</li>
+<li>regexes language models write for typical agent tasks (extract fields from model output,
+validate a date or an email, split records, clean whitespace), collected with tjs-lang&#39;s
+grokkability harness;</li>
+<li>the regexes in tjs-lang&#39;s own compiler (about 350 sites), which are also the first migration
+target.</li>
+</ol>
+<p>Every translated regex is checked by a DIFFERENTIAL test: the regex and its translation run on
+generated inputs, and must agree on every one. That test is the only place the host <code>RegExp</code> is
+allowed.</p>
+<h2 id="pattern-as-a-way-to-understand-regexes">Pattern as a way to understand regexes</h2>
+<p>The translator gives something useful even where no one runs the result: <strong>any regex, read
+aloud.</strong> Paste <code>^(?:[a-z0-9._]+)@[a-z0-9-]+(?:\.[a-zA-Z]+)+$</code> and get &quot;the start of the input,
+then one or more characters in .0-9_a-z, then &quot;@&quot;, …&quot;, or, where it is refused, the precise
+reason (where it would backtrack, and what it was standing in for). That is an explainer for the
+regexes people inherit, review, and copy from answers they do not understand: the same audience
+the &quot;Regexes are Hard&quot; survey found (70% of developers say regexes are less readable than other
+code). It wants a page on the doc site where you paste a regex and see the pattern, its
+description, and its railroad diagram.</p>
+
+  </article>
+  <nav class="doc-nav" aria-label="Documentation">
+  <ul>
+    <li><a class="doc-link" href="../">tosijs-pattern</a></li>
+    <li class="nav-branch -open"><div class="nav-branch-head"><button type="button" class="nav-toggle" aria-expanded="true" aria-controls="tosi-nav-guide" aria-label="Guide"></button><a class="doc-link" href="../guide/">Guide</a></div>
+    <ul id="tosi-nav-guide">
+      <li><a class="doc-link" href="../vocabulary/">Vocabulary</a></li>
+      <li><a class="doc-link current" href="../from-regex/" aria-current="page">From regex</a></li>
+    </ul></li>
+    <li class="nav-branch"><div class="nav-branch-head"><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="tosi-nav-design" aria-label="Design"></button><a class="doc-link" href="../design/">Design</a></div>
+    <ul id="tosi-nav-design">
+      <li><a class="doc-link" href="../performance/">Performance</a></li>
+      <li><a class="doc-link" href="../formal/">A formal specification in Lean 4</a></li>
+    </ul></li>
+  </ul>
+  </nav>
+  <ul class="doc-navbar">
+    <li><a href="https://tosijs.net" data-icon="tosi">tosijs</a></li>
+    <li><a href="https://github.com/tonioloewald/tosijs-pattern" data-icon="github">github</a></li>
+    <li><a href="https://www.npmjs.com/package/tosijs-pattern" data-icon="npm">npmjs</a></li>
+  </ul>
+  </tosi-doc-system>
+  <script type="module" src="../hydrate-kgd6kdqb.js"></script>
+</body>
+</html>

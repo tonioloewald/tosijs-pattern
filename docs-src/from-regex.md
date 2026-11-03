@@ -19,7 +19,12 @@ try {
 } catch (e) {
   refusal = `${e.code}: ${e.message}`
 }
-show(preview, version.toCode(), version.describe(), version.parse('v2.13').captures, refusal)
+show(preview, {
+  'version.toCode()': version.toCode(),
+  'version.describe()': version.describe(),
+  "version.parse('v2.13').captures": version.parse('v2.13').captures,
+  'fromRegex(/\\d+5/) is refused': refusal,
+})
 ```
 
 `toCode()` writes the translation as the chain that builds it, so a regex comes back as code

@@ -9,7 +9,10 @@ for (const f of files) {
     n++
     const out: string[] = []
     const preview = { append: (x: any) => out.push(x.textContent) }
-    const show = (_p: any, ...v: any[]) => v.forEach((x) => out.push(typeof x === 'string' ? x : JSON.stringify(x)))
+    const show = (_p: any, values: Record<string, unknown>) => {
+      if (!values || typeof values !== 'object' || Array.isArray(values)) throw new TypeError('show(preview, { caption: value }) takes an object')
+      for (const [k, x] of Object.entries(values)) out.push(`${k}: ${typeof x === 'string' ? x : JSON.stringify(x)}`)
+    }
     const body = m[1].replace(/^import .*$/gm, '')
     try {
       new Function('preview', 'show', ...Object.keys(pattern), body)(preview, show, ...Object.values(pattern))
