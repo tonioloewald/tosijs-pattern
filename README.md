@@ -2,6 +2,8 @@
 
 # tosijs-pattern
 
+<img src="https://pattern.tosijs.net/icon.png" alt="tosijs-pattern icon" width="96" height="96">
+
 **Matching that reads like what it means.**
 
 A good regex programmer reads `^\d{3}-\d{4}$` aloud as "three digits, a dash, four digits".

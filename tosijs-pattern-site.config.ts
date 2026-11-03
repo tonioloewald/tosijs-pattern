@@ -23,6 +23,8 @@ export default defineSiteConfig({
   // The project icon: demo/static/ is copied to the web root, so it is also /favicon.svg (the
   // default favicon). Inlined as the header's brand mark.
   logo: readFileSync(new URL('./demo/static/favicon.svg', import.meta.url), 'utf8'),
+  // A PNG of the same icon (rendered from the SVG by headless Chrome), for link previews.
+  ogImage: '/icon.png',
 
   projectLinks: {
     tosijs: 'https://tosijs.net',
