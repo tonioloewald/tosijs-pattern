@@ -210,3 +210,9 @@ Each is (or should be) a card on the Virta board, project `tosijs-pattern`.
 - `balanced`'s quote characters are single characters, and it does not understand comments or
   template literals yet (that is the code mode).
 - The site's dev server needs local TLS (`bunx tosijs-dev-certs`, mkcert) the first time.
+- **Restart the dev server after changing `tosijs-pattern-site.config.ts` or `demo/site.ts`**
+  (tosijs-ui #3772). A running server does not rebuild the page bundle from `demo/site.ts`, and
+  `bun bin/site.ts --build` while it runs hands the build to it ("dev server rebuilt this
+  tree"), which uses the config it started with: the build looks fine and is stale. Stop it
+  (`kill $(lsof -nP -t -iTCP:8792 -sTCP:LISTEN)`), build or start again, and check the output
+  (e.g. `grep og:image docs/index.html`).
