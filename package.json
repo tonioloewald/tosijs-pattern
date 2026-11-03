@@ -1,6 +1,6 @@
 {
   "name": "tosijs-pattern",
-  "version": "0.1.0-dev",
+  "version": "0.1.0",
   "description": "Matching that reads like what it means: a fluent, declarative alternative to regular expressions, with no backtracking, a step budget, and the structure regex cannot express (quoted, balanced, separated lists).",
   "type": "module",
   "main": "./dist/index.js",

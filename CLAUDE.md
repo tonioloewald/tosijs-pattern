@@ -64,7 +64,7 @@ The goals, as the owner stated them (2026-11-03), and the cards that serve each:
 ## Commands
 
 ```sh
-bun test                                   # the suite (188 tests)
+bun test                                   # the suite (198 tests)
 bunx tsc --noEmit                          # typecheck
 bun scripts/run-examples.ts README.md docs-src/*.md   # run every live example (stub preview)
 bun bin/site.ts --build                    # build the doc site (docs/) and the library (dist/)
@@ -117,12 +117,17 @@ Built and verified:
 - `fromRegex()`: translates where it can prove equivalence, refuses the rest with a coded reason.
   67% of tjs-lang's regexes translate (53% of a large `node_modules`), every one agreeing with its
   regex on generated inputs; the check was mutation-checked (`reports/from-regex-2026-11-03.md`).
-- 188 tests. A guard test fails if a node kind is missing from the engine, `describe`,
+- 198 tests. A guard test fails if a node kind is missing from the engine, `describe`,
   `fromJSON` or `toCode`; every `toCode()` output is run and must rebuild the same pattern (and,
   for `fromRegex` output, agree with the regex). The semantics tests were mutation-checked: making repetition give back, or `oneOf`
   take the longest, turns 10 red. A differential corpus compares patterns with the regex a
   fluent engineer would write.
-- The doc site builds clean; all 7 live examples ran in headless Chrome.
+- The doc site builds clean; all 12 live examples run (`scripts/run-examples.ts`).
+- **0.1.0 is the first release** (2026-11-03), published by hand with 2FA, because npm's Trusted
+  Publisher can only be configured for a package that exists. After it: add the Trusted
+  Publisher for `.github/workflows/publish.yml`, and release from the workflow from then on.
+  Review: `reviews/0.1.0-pre-release.md`; follow-ups #3782; the template's first-publish bug is
+  tosijs-coding-practices #3783.
 
 Not done: everything under "Work, in order".
 

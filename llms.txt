@@ -1,4 +1,4 @@
-# tosijs-pattern v0.1.0-dev
+# tosijs-pattern v0.1.0
 
 Matching that reads like what it means: a fluent, declarative alternative to regular expressions.
 

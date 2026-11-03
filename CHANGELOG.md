@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-03
+
+The first release. Reviewed before the tag: `reviews/0.1.0-pre-release.md` (its blocker and
+every major fixed; the rest filed).
+
 ### Added
 
 - The core: a fluent CHAIN from one import, `pattern.start().digits(3).text('-').end()` (nouns,
@@ -38,3 +43,12 @@
   is a table's rows after its header line. For a search it is the usual use of a lookbehind:
   `pattern.startAfter('$').number()` finds numbers without their `$`; it stays linear.
 - A doc site (tosijs-ui) whose examples run live in the page.
+
+### Safety
+
+- Every scan the engine does is charged to the step budget, and a test fails on any loop that
+  is not. Search (`find`, `findAll`) is not linear yet for a pattern that scans ahead from any
+  start (a leading `until` or repetition): on text where it fails that is quadratic, and ends in
+  a `PatternBudgetError`, never a hang.
+- Replacement templates name only the pattern's own captures, and `__proto__` cannot name a
+  capture or a column.
