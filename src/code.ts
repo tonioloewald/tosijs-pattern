@@ -156,5 +156,11 @@ function specOf(n: Extract<Node, { kind: 'chars' }>): string {
 /** A range string that reads back to exactly these ranges: `-` and `\` escaped, `x-y` for runs. */
 function spec(ranges: Ranges): string {
   const one = (cp: number) => (cp === 0x2d || cp === 0x5c ? '\\' : '') + String.fromCodePoint(cp)
-  return ranges.map(([a, b]) => (a === b ? one(a) : b === a + 1 ? one(a) + one(b) : `${one(a)}-${one(b)}`)).join('')
+  // A lone dash goes LAST, where it is itself without an escape: `0-9a-z-`, as people write it.
+  const dash = ranges.some(([a, b]) => a === 0x2d && b === 0x2d)
+  const body = ranges
+    .filter(([a, b]) => !(dash && a === 0x2d && b === 0x2d))
+    .map(([a, b]) => (a === b ? one(a) : b === a + 1 ? one(a) + one(b) : `${one(a)}-${one(b)}`))
+    .join('')
+  return dash ? body + '-' : body
 }

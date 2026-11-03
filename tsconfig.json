@@ -25,5 +25,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  // Build output and the dev server's copies of it are not source.
+  "exclude": ["node_modules", "docs", "docs.last-good", "dist", "tls"]
 }

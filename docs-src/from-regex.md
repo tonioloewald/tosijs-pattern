@@ -116,11 +116,21 @@ allowed.
 
 ## Pattern as a way to understand regexes
 
-The translator gives something useful even where no one runs the result: **any regex, read
-aloud.** Paste `^(?:[a-z0-9._]+)@[a-z0-9-]+(?:\.[a-zA-Z]+)+$` and get "the start of the input,
-then one or more characters in .0-9_a-z, then "@", …", or, where it is refused, the precise
-reason (where it would backtrack, and what it was standing in for). That is an explainer for the
-regexes people inherit, review, and copy from answers they do not understand: the same audience
-the "Regexes are Hard" survey found (70% of developers say regexes are less readable than other
-code). It wants a page on the doc site where you paste a regex and see the pattern, its
-description, and its railroad diagram.
+The translator gives something useful even where no one runs the result: **any regex, written
+as code you can read.** `toCode()` gives the chain, which is often the clearest reading of all,
+and `describe()` reads it aloud:
+
+```js
+import { fromRegex } from 'tosijs-pattern'
+import { show } from 'tosijs-pattern/demo'
+
+const email = fromRegex(/^(?:[a-z0-9._]+)@[a-z0-9-]+(?:\.[a-zA-Z]+)+$/)
+
+show(preview, { 'email.toCode()': email.toCode(), 'email.describe()': email.describe() })
+```
+
+Where a regex is refused, the refusal is the explanation: where it would backtrack, and what it
+was standing in for. That is an explainer for the regexes people inherit, review, and copy from
+answers they do not understand: the same audience the "Regexes are Hard" survey found (70% of
+developers say regexes are less readable than other code). It wants a page on the doc site where you paste a regex and see its chain, its description,
+and its railroad diagram.

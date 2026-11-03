@@ -316,11 +316,17 @@ group('toCode() writes the chain that builds the pattern', () => {
     [pattern.letter().optional(pattern.wordChars()).describedAs('an id'), "pattern.letter().optional(pattern.wordChars()).describedAs('an id')"],
     [pattern.listOf(pattern.integer(), { separatedBy: ',', atLeast: 1 }), "pattern.listOf(pattern.integer(), { separatedBy: ',', atLeast: 1 })"],
     [pattern.whitespace(1).lineBreaks(2, Infinity), 'pattern.whitespace(1).lineBreaks(2, Infinity)'],
+    // A dash from a regex class is written last, unescaped, as people write it.
+    [fromJSON({ kind: 'chars', ranges: [[45, 45], [48, 57], [97, 122]] }), "pattern.charIn('0-9a-z-')"],
+    [fromJSON({ kind: 'chars', ranges: [[45, 45]] }), "pattern.charIn('-')"],
   ]
   for (const [p, code] of CASES)
     it(code, () => {
       expect(p.toCode()).toBe(code)
-      expect(run(code).toJSON()).toEqual(p.toJSON())
+      // Labels are for people (a chars node read from JSON has none; the rebuilt one does), so
+      // compare everything else.
+      const unlabelled = (n: unknown) => JSON.stringify(n, (k, v) => (k === 'label' || k === 'plural' ? undefined : v))
+      expect(unlabelled(run(code))).toBe(unlabelled(p))
     })
 })
 
