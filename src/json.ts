@@ -92,7 +92,7 @@ function node(x: unknown, at: string, depth: number): Node {
     case 'capture': {
       const name = str('name')!
       if (!isIdentifier(name))
-        throw new PatternError(`${at}.name: not an identifier`)
+        throw new PatternError(`${at}.name: not an identifier (or __proto__)`)
       return { kind, name, item: child('item') }
     }
     case 'describedAs':

@@ -1,4 +1,5 @@
 import { describe as group, it, expect } from 'bun:test'
+import { readFileSync } from 'node:fs'
 import { pattern, fromJSON, PatternError, PatternBudgetError, type Pattern } from './index'
 import { WHITESPACE, inRanges } from './chars'
 import { KINDS, type Kind, type Node } from './nodes'
@@ -151,6 +152,24 @@ group('captures and values', () => {
     expect(() =>
       fromJSON({ kind: 'until', item: { kind: 'capture', name: 'x', item: { kind: 'literal', text: ';' } } }).find('a;')
     ).toThrow(/until/)
+  })
+
+  it('a capture inside a columns() separator is lost too (a row keeps only its columns)', () => {
+    const sep = pattern.oneOf(',', ';').as('sep')
+    expect(() => pattern.columns(['a', 'b'], { separatedBy: sep }).parse('1;2')).toThrow(/columns\(\)'s separator/)
+  })
+
+  it('__proto__ cannot name a capture or a column (assigning it would set a prototype, losing the value)', () => {
+    expect(() => pattern.digit().as('__proto__')).toThrow(/__proto__/)
+    expect(() => pattern.columns(['__proto__', 'b'], { separatedBy: ',' })).toThrow(/__proto__/)
+    expect(() => fromJSON({ kind: 'capture', name: '__proto__', item: { kind: 'literal', text: 'a' } })).toThrow(/__proto__/)
+  })
+
+  it('a replacement names only captures, never what every object inherits', () => {
+    const p = pattern.digits().as('n')
+    for (const name of ['constructor', 'toString', '__proto__', 'hasOwnProperty'])
+      expect(() => p.replaceAll('a1', `{${name}}`)).toThrow(/replacement names/)
+    expect(() => pattern.digits().replaceAll('a1', '{constructor}')).toThrow(/replacement names/)
   })
 
   it('the same name twice, where both would be recorded, is an error (the second would overwrite)', () => {
@@ -447,6 +466,36 @@ group('startAt / startAfter: where the match begins', () => {
 group('the step budget bounds the work', () => {
   it('a budget that is too small throws, naming the budget', () => {
     expect(() => pattern.anyChars().parse('x'.repeat(10_000), { maxSteps: 1_000 })).toThrow(PatternBudgetError)
+  })
+
+  it('every loop in the engine pays for its work, or says where it is paid', () => {
+    // A loop that consumes input without charging step() is work the budget cannot see: on
+    // untrusted patterns that is unbounded CPU (0.1.0 review B1, M1). New loops must say which.
+    const src = readFileSync(new URL('./engine.ts', import.meta.url), 'utf8').split('\n')
+    const unpaid = src.flatMap((line, i) => {
+      if (!/\b(while|for) \(/.test(line) || line.includes('// charged:')) return []
+      const body = src.slice(i, i + 3).join('\n')
+      return /\bstep\(ctx/.test(body) ? [] : [`engine.ts:${i + 1}: ${line.trim()}`]
+    })
+    expect(unpaid).toEqual([])
+  })
+
+  it('a run of blank lines is charged, under indentedBlock', () => {
+    const block = fromJSON({ kind: 'indentedBlock' })
+    expect(() => block.findAll('\n'.repeat(20_000), { maxSteps: 200_000 })).toThrow(PatternBudgetError)
+    // One step or more per line, so the budget sees the scan.
+    const p = pattern.text('a').indentedBlock()
+    const steps = (n: number) => p.parse('a\n' + '\n'.repeat(n) + '  x').steps
+    expect(steps(10_000) - steps(1_000)).toBeGreaterThanOrEqual(9_000)
+    // A very long run is a pattern answer, not a stack overflow.
+    expect(p.find('a\n' + '\n'.repeat(2_000_000) + '  x')).not.toBeNull()
+  })
+
+  it('the last delimited column is charged', () => {
+    const p = pattern.columns(['a'], { separatedBy: ',' }).text('!')
+    expect(() => p.findAll('x'.repeat(40_000), { maxSteps: 1_000_000 })).toThrow(PatternBudgetError)
+    const one = pattern.columns(['a'], { separatedBy: ',' })
+    expect(one.parse('x'.repeat(4_000)).steps).toBeGreaterThanOrEqual(4_000)
   })
 
   it('work is linear in input for a plain pattern', () => {

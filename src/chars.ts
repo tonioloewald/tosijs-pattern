@@ -97,9 +97,13 @@ export const WHITESPACE: Ranges = normalize([
   [0xfeff, 0xfeff],
 ])
 
-/** Is `name` a JavaScript identifier (ASCII)? A loop, not a RegExp: this library uses none. */
+/**
+ * Is `name` a JavaScript identifier (ASCII) that can name a capture or a column? A loop, not a
+ * RegExp: this library uses none. `__proto__` is refused: assigning it sets an object's
+ * prototype instead of a key, so the value would be silently lost.
+ */
 export function isIdentifier(name: string): boolean {
-  if (!name) return false
+  if (!name || name === '__proto__') return false
   for (let i = 0; i < name.length; i++) {
     const c = name.charCodeAt(i)
     const letterLike = (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === 95 || c === 36

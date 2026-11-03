@@ -179,7 +179,7 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       let texts: Texts | null = null
       let start: number | undefined
       let last: Hit | null = null
-      for (let i = 0; i < node.items.length; i++) {
+      for (let i = 0; i < node.items.length; i++) { // charged: by match()
         const h = match(node.items[i]!, ctx, at)
         if (!h) return null
         if (i === 0) start = h.start
@@ -194,7 +194,7 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       return { start, end: at, caps, texts, value }
     }
     case 'oneOf': {
-      for (const option of node.options) {
+      for (const option of node.options) { // charged: by match()
         const h = match(option, ctx, pos)
         if (h) return h
       }
@@ -207,7 +207,7 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       let hasCaps = false
       let lastCaps: Captures | null = null
       let lastTexts: Texts | null = null
-      while (node.max === null || count < node.max) {
+      while (node.max === null || count < node.max) { // charged: by match()
         const h = match(node.item, ctx, at)
         if (!h) break
         count++
@@ -394,7 +394,7 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       if (first) {
         items.push(first.caps ?? first.value)
         at = first.end
-        for (;;) {
+        for (;;) { // charged: by match()
           const sep = match(node.separator, ctx, at)
           if (!sep) break
           const next = match(node.item, ctx, sep.end)
@@ -418,7 +418,7 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       const row: Record<string, string> = {}
       const texts: Texts = {}
       let at = pos
-      for (let i = 0; i < node.names.length; i++) {
+      for (let i = 0; i < node.names.length; i++) { // charged: by the scans inside
         const name = node.names[i]!
         const from = at
         if (node.widths) {
@@ -433,7 +433,10 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
           const last = i === node.names.length - 1
           ctx.quiet++
           try {
-            while (!isBreak(at) && !(!last && match(node.separator!, ctx, at))) at++
+            while (!isBreak(at) && !(!last && match(node.separator!, ctx, at))) {
+              step(ctx)
+              at++
+            }
           } finally {
             ctx.quiet--
           }
@@ -460,7 +463,7 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       }
       const indentOf = (from: number, to: number) => {
         let at = from
-        while (at < to && (input[at] === ' ' || input[at] === '\t')) at++
+        while (at < to && (input[at] === ' ' || input[at] === '\t')) at++ // charged: within a line already paid for
         return at
       }
       const head = input.slice(lineStart, indentOf(lineStart, pos))
@@ -470,6 +473,7 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       let blanks: [number, number][] = []
       let end = -1
       for (let at = pos; at < input.length; ) {
+        step(ctx) // every line, blank ones too: a run of empty lines is work
         const br = lineBreakAt(at)
         if (!br) break
         const from = at + br
@@ -486,7 +490,8 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
         }
         const indent = input.slice(from, text)
         if (!(indent.length > head.length && indent.startsWith(head))) break
-        lines.push(...blanks, [from, to])
+        for (const b of blanks) lines.push(b) // charged: each blank line was paid for; not a spread: a million blank lines would overflow the stack
+        lines.push([from, to])
         blanks = []
         end = to
       }
@@ -494,13 +499,13 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       // The value is the lines with their common indentation removed, so it can be parsed again.
       const texts = lines.map(([a, b]) => input.slice(a, b))
       let common: string | null = null
-      for (const t of texts) {
+      for (const t of texts) { // charged: the lines were paid for as they were read
         if (!t.trim()) continue
         const indent = t.slice(0, t.length - t.trimStart().length)
         if (common === null) common = indent
         else {
           let k = 0
-          while (k < common.length && k < indent.length && common[k] === indent[k]) k++
+          while (k < common.length && k < indent.length && common[k] === indent[k]) k++ // charged: as above
           common = common.slice(0, k)
         }
       }
@@ -514,18 +519,18 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       if (input[at] === '-') at++
       const intStart = at
       if (input[at] === '0') at++
-      else while (at < input.length && isDigit(input.charCodeAt(at))) at++
+      else while (at < input.length && isDigit(input.charCodeAt(at))) at++ // charged: step(ctx, at - pos) below
       if (at === intStart) return fail(ctx, pos, expectation(node))
       if (node.kind === 'number') {
         if (input[at] === '.' && isDigit(input.charCodeAt(at + 1))) {
           at++
-          while (isDigit(input.charCodeAt(at))) at++
+          while (isDigit(input.charCodeAt(at))) at++ // charged: below
         }
         if (input[at] === 'e' || input[at] === 'E') {
           let e = at + 1
           if (input[e] === '+' || input[e] === '-') e++
           if (isDigit(input.charCodeAt(e))) {
-            while (isDigit(input.charCodeAt(e))) e++
+            while (isDigit(input.charCodeAt(e))) e++ // charged: below
             at = e
           }
         }

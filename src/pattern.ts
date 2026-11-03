@@ -387,7 +387,7 @@ export class Pattern {
       if (!names.length) throw new PatternError(`${where}: name at least one column`)
       for (const n of names)
         if (typeof n !== 'string' || !isIdentifier(n))
-          throw new PatternError(`${where}: a column name is an identifier, got ${JSON.stringify(n)}`)
+          throw new PatternError(`${where}: a column name is an identifier (not __proto__), got ${JSON.stringify(n)}`)
       if (new Set(names).size !== names.length) throw new PatternError(`${where}: a column name appears twice`)
       return [...names]
     }
@@ -440,7 +440,7 @@ export class Pattern {
   /** Records what the step just before matched, under `name`: `.digits(4).as('year')`. */
   as(name: string): Pattern {
     if (typeof name !== 'string' || !isIdentifier(name))
-      throw new PatternError(`as(): a name is an identifier, got ${JSON.stringify(name)}`)
+      throw new PatternError(`as(): a name is an identifier (not __proto__), got ${JSON.stringify(name)}`)
     const last = this.steps.at(-1)
     if (!last) throw new PatternError(`as('${name}'): there is nothing before it to name`)
     return new Pattern([...this.steps.slice(0, -1), { kind: 'capture', name, item: last }])
@@ -656,7 +656,7 @@ function fillTemplate(template: string, m: Match): string {
       const close = template.indexOf('}', i)
       if (close < 0) throw new PatternError(`replacement: unclosed { in ${JSON.stringify(template)}`)
       const name = template.slice(i + 1, close)
-      if (!(name in m.texts))
+      if (!Object.hasOwn(m.texts, name))
         throw new PatternError(
           `replacement names {${name}}, but the pattern captures ${
             Object.keys(m.captures).map((k) => `{${k}}`).join(', ') || 'nothing'
@@ -744,6 +744,10 @@ function checkCaptures(node: Node, inList: boolean, check: string | null): Set<s
     }
     case 'describedAs':
       return checkCaptures(node.item, inList, check)
+    case 'columns':
+      // A row's value is its columns; whatever the separator matched is not kept.
+      if (node.separator) checkCaptures(node.separator, inList, "columns()'s separator")
+      return none
     default:
       return none
   }
