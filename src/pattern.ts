@@ -333,6 +333,20 @@ export class Pattern {
       min: count(options.atLeast ?? 0, 'listOf() atLeast'),
     })
   }
+  /** Everything from here to the end of the line, possibly nothing (regex `.*` without the s flag). */
+  restOfLine(): Pattern {
+    return this.#add(REST_OF_LINE)
+  }
+  /**
+   * At the end of a line, the lines after it indented DEEPER than it: a Python body, a Markdown
+   * list item's continuation. Blank lines between them belong to it; it stops before the first
+   * line indented the same or less. Its value is the lines with their common indentation
+   * removed, so a captured block can be parsed again:
+   * `pattern.text('def ').restOfLine().indentedBlock().as('body')`.
+   */
+  indentedBlock(): Pattern {
+    return this.#add({ kind: 'indentedBlock' })
+  }
   /** JSON's number grammar (`-1`, `1.5`, `1e5`; not `.5` or `+1`). Its value is a number. */
   number(): Pattern {
     return this.#add({ kind: 'number' })
@@ -499,7 +513,7 @@ export class Pattern {
 
   /** The pattern as the chain that builds it: `pattern.digits(3).text('-')`. Pasting it gives this pattern. */
   toCode(): string {
-    return this.steps.length ? toCode(this.node, NOUNS) : 'pattern'
+    return this.steps.length ? toCode(this.node, NOUNS, { restOfLine: REST_OF_LINE }) : 'pattern'
   }
 
   /** The pattern as plain JSON. `fromJSON` reads it back (and validates it). */
@@ -718,6 +732,13 @@ export const NOUNS = {
 } satisfies Record<string, Node>
 
 type NounName = keyof typeof NOUNS
+
+/** `restOfLine()`: any characters but a line break, read aloud as what it is. */
+export const REST_OF_LINE: Node = freezeNode({
+  kind: 'describedAs',
+  label: 'the rest of the line',
+  item: { kind: 'repeat', item: { kind: 'chars', ranges: [[10, 10], [13, 13]], negated: true }, min: 0, max: null },
+} as Node)
 
 /**
  * The empty pattern: where every chain starts. `pattern.digits(3)` is three digits; nest a

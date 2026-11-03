@@ -101,6 +101,8 @@ export function expectation(node: Node): string {
       return 'a number'
     case 'integer':
       return 'an integer'
+    case 'indentedBlock':
+      return 'an indented block'
     case 'end':
       return 'the end of the input'
     case 'lineEnd':
@@ -362,6 +364,66 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       }
       if (items.length < node.min) return null
       return { end: at, caps: null, value: items }
+    }
+    case 'indentedBlock': {
+      // Only at the end of a line: the block is the lines AFTER this one.
+      const lineBreakAt = (at: number) =>
+        input.startsWith('\r\n', at) ? 2 : input[at] === '\n' || input[at] === '\r' ? 1 : 0
+      if (!lineBreakAt(pos) || (input[pos] === '\n' && input[pos - 1] === '\r'))
+        return fail(ctx, pos, expectation(node))
+      let lineStart = pos
+      while (lineStart > 0 && input[lineStart - 1] !== '\n' && input[lineStart - 1] !== '\r') {
+        step(ctx)
+        lineStart--
+      }
+      const indentOf = (from: number, to: number) => {
+        let at = from
+        while (at < to && (input[at] === ' ' || input[at] === '\t')) at++
+        return at
+      }
+      const head = input.slice(lineStart, indentOf(lineStart, pos))
+      // Deeper means: this line's indentation starts with the header's and is longer. Tabs and
+      // spaces mixed so that neither is a prefix of the other are not deeper: the block ends.
+      const lines: [number, number][] = []
+      let blanks: [number, number][] = []
+      let end = -1
+      for (let at = pos; at < input.length; ) {
+        const br = lineBreakAt(at)
+        if (!br) break
+        const from = at + br
+        let to = from
+        while (to < input.length && input[to] !== '\n' && input[to] !== '\r') {
+          step(ctx)
+          to++
+        }
+        const text = indentOf(from, to)
+        at = to
+        if (text === to) {
+          blanks.push([from, to]) // blank: in the block only if a deeper line follows
+          continue
+        }
+        const indent = input.slice(from, text)
+        if (!(indent.length > head.length && indent.startsWith(head))) break
+        lines.push(...blanks, [from, to])
+        blanks = []
+        end = to
+      }
+      if (end < 0) return fail(ctx, pos, expectation(node))
+      // The value is the lines with their common indentation removed, so it can be parsed again.
+      const texts = lines.map(([a, b]) => input.slice(a, b))
+      let common: string | null = null
+      for (const t of texts) {
+        if (!t.trim()) continue
+        const indent = t.slice(0, t.length - t.trimStart().length)
+        if (common === null) common = indent
+        else {
+          let k = 0
+          while (k < common.length && k < indent.length && common[k] === indent[k]) k++
+          common = common.slice(0, k)
+        }
+      }
+      const cut = (common ?? '').length
+      return { end, caps: null, value: texts.map((t) => (t.trim() ? t.slice(cut) : '')).join('\n') }
     }
     case 'number':
     case 'integer': {

@@ -27,7 +27,9 @@ const NAMES: Record<Named, [string | null, string]> = {
   lineBreak: ['lineBreak', 'lineBreaks'],
 }
 
-export function toCode(node: Node, nouns: Record<Named, Node>): string {
+export function toCode(node: Node, nouns: Record<Named, Node>, pieces: Record<string, Node> = {}): string {
+  /** A named piece built from other nodes (`restOfLine`), recognised by its exact shape. */
+  const piece = (n: Node) => Object.keys(pieces).find((k) => JSON.stringify(pieces[k]) === JSON.stringify(n))
   const named = (n: Node): Named | null => {
     for (const k of Object.keys(NAMES) as Named[]) {
       const m = nouns[k]
@@ -94,6 +96,8 @@ export function toCode(node: Node, nouns: Record<Named, Node>): string {
       case 'capture':
         return (n.item.kind === 'sequence' ? `.group(${code(n.item)})` : step(n.item)) + `.as(${quote(n.name)})`
       case 'describedAs': {
+        const p = piece(n)
+        if (p) return `.${p}()`
         const k = named(n)
         if (k) return `.${NAMES[k][0]}()`
         return `.group(${code(n.item)}.describedAs(${quote(n.label)}))`
@@ -102,6 +106,7 @@ export function toCode(node: Node, nouns: Record<Named, Node>): string {
       case 'end':
       case 'lineStart':
       case 'lineEnd':
+      case 'indentedBlock':
       case 'number':
       case 'integer':
         return `.${n.kind}()`
@@ -123,7 +128,7 @@ export function toCode(node: Node, nouns: Record<Named, Node>): string {
   }
 
   // At the top, a describedAs is a whole-pattern label: `….describedAs('an id')`, not a group.
-  if (node.kind === 'describedAs' && !named(node)) return `${code(node.item)}.describedAs(${quote(node.label)})`
+  if (node.kind === 'describedAs' && !named(node) && !piece(node)) return `${code(node.item)}.describedAs(${quote(node.label)})`
   return code(node)
 }
 

@@ -28,4 +28,6 @@
 - `lineStart()` and `lineEnd()` agree with `lineBreak()`: a line break is `\r\n`, `\n` or `\r`,
   never the middle of a `\r\n`. Before, `lineStart()` ignored `\r`, so a file with `\r` line
   endings had one line, and `lineEnd()` matched between the `\r` and `\n` of a `\r\n`.
+- `restOfLine()`, and `indentedBlock()`: the lines after this one indented deeper than it (a
+  Python body, a Markdown list item's continuation), dedented as its value so it parses again.
 - A doc site (tosijs-ui) whose examples run live in the page.

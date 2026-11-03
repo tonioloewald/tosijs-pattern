@@ -56,6 +56,12 @@ export type Node =
     }
   /** Zero or more `item`s with `separator` between them (at least `min`). Its value is a list. */
   | { kind: 'separatedBy'; item: Node; separator: Node; min: number }
+  /**
+   * At the end of a line: the lines after it that are indented DEEPER than it (a Python body, a
+   * Markdown list item's continuation), blank lines between them included. It stops before the
+   * first non-blank line indented the same or less. Its value is the lines, dedented.
+   */
+  | { kind: 'indentedBlock' }
   /** JSON's number grammar; its value is a number. */
   | { kind: 'number' }
   /** An optional minus and digits, no leading zeros; its value is a number. */
@@ -82,6 +88,7 @@ export const KINDS: readonly Kind[] = [
   'quoted',
   'balanced',
   'separatedBy',
+  'indentedBlock',
   'number',
   'integer',
 ]

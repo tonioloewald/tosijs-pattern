@@ -266,6 +266,59 @@ group('operations', () => {
   })
 })
 
+group('lines, and blocks by indentation (Python, Markdown)', () => {
+  it('restOfLine is everything up to the line break, possibly nothing', () => {
+    const heading = pattern.lineStart().text('# ').restOfLine().as('title')
+    expect(heading.findAll('# One\r\ntext\n# Two\n# \n').map((m) => m.captures.title)).toEqual(['One', 'Two', ''])
+    expect(pattern.restOfLine().describe()).toBe('the rest of the line')
+    expect(pattern.text('#').restOfLine().toCode()).toBe("pattern.text('#').restOfLine()")
+  })
+
+  const python = [
+    'def f(x):',
+    '    if x:',
+    '        return 1',
+    '',
+    '    return 2',
+    '',
+    'def g():',
+    '    pass',
+  ].join('\n')
+  const def = pattern.lineStart().text('def ').wordChars().as('name').restOfLine().indentedBlock().as('body')
+
+  it('a Python body: deeper lines, blank lines inside, stopping at the same indentation or less', () => {
+    expect(def.findAll(python).map((m) => m.captures)).toEqual([
+      { name: 'f', body: 'if x:\n    return 1\n\nreturn 2' },
+      { name: 'g', body: 'pass' },
+    ])
+    // The body is dedented, so it parses again: the `if` inside f has its own block.
+    const ifs = pattern.lineStart().text('if ').restOfLine().indentedBlock().as('then')
+    expect(ifs.find(def.find(python)!.captures.body as string)?.captures.then).toBe('return 1')
+  })
+
+  it('a blank line after the block is not in it; the next line starts right after it', () => {
+    const m = def.find(python)!
+    expect(python.slice(m.end)).toStartWith('\n\ndef g')
+  })
+
+  it('a Markdown list item and its continuation lines', () => {
+    const md = '- one\n  more of one\n\n  still one\n- two\n'
+    const item = pattern.lineStart().text('- ').restOfLine().as('first').optional(pattern.indentedBlock().as('rest'))
+    expect(item.findAll(md).map((m) => m.captures)).toEqual([
+      { first: 'one', rest: 'more of one\n\nstill one' },
+      { first: 'two' },
+    ])
+  })
+
+  it('needs at least one deeper line, works with \r\n, and mixed tabs/spaces end the block', () => {
+    expect(pattern.text('a:').indentedBlock().find('a:\nb')).toBeNull()
+    expect(pattern.text('a:').indentedBlock().find('a:')).toBeNull()
+    expect(pattern.text('a:').indentedBlock().as('b').find('a:\r\n  x\r\n  y\r\nz')?.captures.b).toBe('x\ny')
+    // The header is indented with a tab; a line indented with spaces is not "deeper" than it.
+    expect(pattern.text('a:').indentedBlock().as('b').find('\ta:\n\t  x\n    y')?.captures.b).toBe('x')
+  })
+})
+
 group('the step budget bounds the work', () => {
   it('a budget that is too small throws, naming the budget', () => {
     expect(() => pattern.anyChars().parse('x'.repeat(10_000), { maxSteps: 1_000 })).toThrow(PatternBudgetError)
@@ -400,6 +453,7 @@ const SAMPLES: Record<Kind, Node> = {
   quoted: { kind: 'quoted', quote: '"', escape: '\\' },
   balanced: { kind: 'balanced', open: '(', close: ')', quotes: '"', escape: null },
   separatedBy: { kind: 'separatedBy', item: lit, separator: { kind: 'literal', text: ',' }, min: 0 },
+  indentedBlock: { kind: 'indentedBlock' },
   number: { kind: 'number' },
   integer: { kind: 'integer' },
 }

@@ -93,7 +93,22 @@ pattern does not have one. `text()` and `group()` add a step.
 | `quoted('"', { escape })` | a quoted span; `escape` is a character or `'double'` (CSV's `""`); its value is the inside |
 | `balanced('(', ')', { quotes })` | a nested span that closes at its own delimiter, skipping quoted text; its value is the inside |
 | `listOf(item, { separatedBy, atLeast })` | a list; its value is an array |
+| `restOfLine()` | everything up to the line break, possibly nothing (regex `.*` without `s`) |
+| `indentedBlock()` | at the end of a line, the lines after it indented DEEPER than it (a Python body, a Markdown list item's continuation), blank lines between them included; it stops before the first line indented the same or less. Its value is the lines with their common indentation removed, so it can be parsed again |
 | `number()`, `integer()` | JSON's number grammar; the value is a number |
+
+A Python function and its body, which parses again as Python:
+
+```js
+import { pattern } from 'tosijs-pattern'
+import { show } from 'tosijs-pattern/demo'
+
+const source = 'def area(w, h):\n    if w < 0:\n        return 0\n\n    return w * h\n\nprint(area(2, 3))'
+const def = pattern.lineStart().text('def ').wordChars().as('name').restOfLine().indentedBlock().as('body')
+const found = def.find(source)
+
+show(preview, { 'def.describe()': def.describe(), 'found.captures': found.captures })
+```
 
 ## Values and captures
 

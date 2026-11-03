@@ -86,6 +86,8 @@ export function describe(node: Node): string {
       }`
     case 'separatedBy':
       return `${node.min ? `at least ${node.min} of ` : ''}${group(node.item)} separated by ${group(node.separator)}`
+    case 'indentedBlock':
+      return 'an indented block'
     case 'number':
       return 'a number'
     case 'integer':

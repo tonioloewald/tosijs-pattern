@@ -127,7 +127,7 @@ function node(x: unknown, at: string, depth: number): Node {
         min: o.min === undefined ? 0 : int('min')!,
       }
     default:
-      // anyChar, start, end, lineStart, lineEnd, number, integer: no fields.
+      // anyChar, start, end, lineStart, lineEnd, indentedBlock, number, integer: no fields.
       return { kind } as Node
   }
 }
