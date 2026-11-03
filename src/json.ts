@@ -87,6 +87,8 @@ function node(x: unknown, at: string, depth: number): Node {
     case 'notFollowedBy':
     case 'until':
       return { kind, item: child('item') }
+    case 'startAt':
+      return o.after === true ? { kind, item: child('item'), after: true } : { kind, item: child('item') }
     case 'capture': {
       const name = str('name')!
       if (!isIdentifier(name))

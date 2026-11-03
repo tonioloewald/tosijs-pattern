@@ -42,6 +42,12 @@ export type Node =
   | { kind: 'end' }
   | { kind: 'lineStart' }
   | { kind: 'lineEnd' }
+  /**
+   * Skips to the first place `item` matches (`after`: and past it). What is skipped is consumed
+   * but is not part of the match: the match, its text and its value begin where this ends. Only
+   * the FIRST step of a pattern.
+   */
+  | { kind: 'startAt'; item: Node; after?: boolean }
   /** Everything up to (not including) the first place `item` matches. Fails if it never does. */
   | { kind: 'until'; item: Node }
   /** A span opened and closed by `quote`. `escape`: a character, `'double'` (`""` inside `"…"`), or none. */
@@ -92,6 +98,7 @@ export const KINDS: readonly Kind[] = [
   'lineStart',
   'lineEnd',
   'until',
+  'startAt',
   'quoted',
   'balanced',
   'separatedBy',

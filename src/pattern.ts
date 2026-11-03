@@ -297,6 +297,28 @@ export class Pattern {
     return this.#add(toNode(piece, 'group()'))
   }
 
+  /**
+   * Begins a pattern by skipping to the first `target`; the match starts THERE (the skipped
+   * text is consumed, not matched): `pattern.startAt('# ').restOfLine()`.
+   */
+  startAt(target: Piece): Pattern {
+    return this.#skip(target, false, 'startAt()')
+  }
+  /**
+   * Begins a pattern by skipping past the first `target`; the match starts after it:
+   * `pattern.startAfter(pattern.lineBreak()).lines(rows)` is the rows after a header line, and
+   * its value is the rows. With `findAll`, `pattern.startAfter('$').number()` finds the numbers
+   * after each `$`, without the `$`.
+   */
+  startAfter(target: Piece): Pattern {
+    return this.#skip(target, true, 'startAfter()')
+  }
+  #skip(target: Piece, after: boolean, where: string): Pattern {
+    if (this.steps.length)
+      throw new PatternError(`${where} begins a pattern: write pattern.${where.slice(0, -2)}(…) first, then the rest`)
+    return this.#add({ kind: 'startAt', item: toNode(target, where), ...(after ? { after } : {}) })
+  }
+
   /** Everything up to (not including) the first `stop`: `.until('-->')`. */
   until(stop: Piece): Pattern {
     return this.#add({ kind: 'until', item: toNode(stop, 'until()') })
@@ -489,8 +511,8 @@ export class Pattern {
       const hit = match(this.node, ctx, at)
       if (hit)
         return {
-          text: input.slice(at, hit.end),
-          start: at,
+          text: input.slice(hit.start ?? at, hit.end),
+          start: hit.start ?? at,
           end: hit.end,
           captures: hit.caps ?? {},
           texts: hit.texts ?? {},
@@ -512,8 +534,8 @@ export class Pattern {
         continue
       }
       out.push({
-        text: input.slice(at, hit.end),
-        start: at,
+        text: input.slice(hit.start ?? at, hit.end),
+        start: hit.start ?? at,
         end: hit.end,
         captures: hit.caps ?? {},
         texts: hit.texts ?? {},
@@ -606,6 +628,7 @@ export class Pattern {
   #check(): void {
     if (this.#checked) return
     checkCaptures(this.node, false, null)
+    checkSkips(this.node)
     this.#checked = true
   }
 }
@@ -704,6 +727,9 @@ function checkCaptures(node: Node, inList: boolean, check: string | null): Set<s
     case 'until':
       checkCaptures(node.item, inList, "until()'s stopping point")
       return none
+    case 'startAt':
+      checkCaptures(node.item, inList, `${node.after ? 'startAfter' : 'startAt'}()'s target, which is skipped`)
+      return none
     case 'sequence': {
       let names = none
       for (const item of node.items)
@@ -721,6 +747,29 @@ function checkCaptures(node: Node, inList: boolean, check: string | null): Set<s
     default:
       return none
   }
+}
+
+/**
+ * A skip (`startAt`/`startAfter`) moves where the WHOLE match begins, so it is only meaningful as
+ * a pattern's first step. Anywhere else (inside `oneOf`, a repetition, a nested chain used
+ * later) it would silently mean something else, so it is an error.
+ */
+function checkSkips(node: Node): void {
+  const visit = (n: Node, first: boolean) => {
+    if (n.kind === 'startAt' && !first)
+      throw new PatternError(
+        `${n.after ? 'startAfter' : 'startAt'}() is only a pattern's first step: it says where the whole match begins`
+      )
+    if (n.kind === 'sequence') n.items.forEach((x, i) => visit(x, first && i === 0))
+    // A label or a capture around the whole pattern does not move where it begins.
+    else if (n.kind === 'describedAs' || n.kind === 'capture') visit(n.item, first)
+    else if (n.kind === 'columns') n.separator && visit(n.separator, false)
+    else
+      for (const v of Object.values(n))
+        if (v && typeof v === 'object' && 'kind' in (v as object)) visit(v as Node, false)
+        else if (Array.isArray(v)) v.forEach((x) => x && typeof x === 'object' && 'kind' in x && visit(x as Node, false))
+  }
+  visit(node, true)
 }
 
 function addName(names: Set<string>, name: string): Set<string> {

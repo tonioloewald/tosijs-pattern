@@ -33,4 +33,7 @@
 - `columns()`: a row of named columns, fixed width (`[{ name, width }, …]`, values trimmed) or
   delimited (`[names], { separatedBy }`), with the row as its value. `lines(row)`: one row per
   line, its value the list. `listOf(…, { trailing: true })` allows a final separator.
+- `startAt(p)` / `startAfter(p)`: a pattern's first step, skipping to (or past) the first `p`;
+  the match, its text and its value begin there. `pattern.startAfter(pattern.lineBreak()).lines(rows)`
+  is a table's rows after its header line.
 - A doc site (tosijs-ui) whose examples run live in the page.

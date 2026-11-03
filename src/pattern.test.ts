@@ -389,6 +389,41 @@ group('columns, and one row per line', () => {
   })
 })
 
+group('startAt / startAfter: where the match begins', () => {
+  it('the rows after a header line: the value is the rows', () => {
+    const rows = pattern.columns([{ name: 'n', width: 3 }])
+    const table = pattern.startAfter(pattern.lineBreak()).lines(rows)
+    expect(table.parse('N\n1\n22\n').value).toEqual([{ n: '1' }, { n: '22' }])
+    expect(table.describe()).toBe('starting after a line break, then a row of columns n (3 wide), one per line')
+  })
+
+  it('the skipped text is consumed but not matched: text, start and replaceAll see only the rest', () => {
+    const price = pattern.startAfter('$').number().as('n')
+    expect(price.findAll('a $5, b $3.50').map((m) => [m.start, m.text, m.captures.n])).toEqual([
+      [3, '5', 5],
+      [9, '3.50', 3.5],
+    ])
+    expect(price.replaceAll('a $5, b $3.50', '{n}0')).toBe('a $50, b $3.500')
+    const heading = pattern.startAt('# ').restOfLine()
+    expect(heading.findAll('x\n# One\n# Two').map((m) => m.text)).toEqual(['# One', '# Two'])
+  })
+
+  it('only as the first step: elsewhere it is an error, at the call or at first use', () => {
+    expect(() => pattern.digit().startAfter('x')).toThrow(/begins a pattern/)
+    expect(() => pattern.oneOf(pattern.startAfter('x'), 'y').find('xy')).toThrow(/first step/)
+    expect(() => pattern.text('a').group(pattern.startAt('b')).find('ab')).toThrow(/first step/)
+    // A label or a capture around the whole pattern is fine.
+    expect(pattern.startAfter(':').restOfLine().describedAs('a value').find('k: v')?.text).toBe(' v')
+    expect(() => pattern.startAfter(pattern.digit().as('d'))).not.toThrow()
+    expect(() => pattern.startAfter(pattern.digit().as('d')).find('1')).toThrow(/skipped/)
+  })
+
+  it('toCode writes it back', () => {
+    expect(pattern.startAfter(pattern.lineBreak()).lines().toCode()).toBe('pattern.startAfter(pattern.lineBreak()).lines()')
+    expect(pattern.startAt('# ').restOfLine().toCode()).toBe("pattern.startAt('# ').restOfLine()")
+  })
+})
+
 group('the step budget bounds the work', () => {
   it('a budget that is too small throws, naming the budget', () => {
     expect(() => pattern.anyChars().parse('x'.repeat(10_000), { maxSteps: 1_000 })).toThrow(PatternBudgetError)
@@ -524,6 +559,7 @@ const SAMPLES: Record<Kind, Node> = {
   balanced: { kind: 'balanced', open: '(', close: ')', quotes: '"', escape: null },
   separatedBy: { kind: 'separatedBy', item: lit, separator: { kind: 'literal', text: ',' }, min: 0 },
   indentedBlock: { kind: 'indentedBlock' },
+  startAt: { kind: 'startAt', item: { kind: 'literal', text: ',' }, after: true },
   columns: { kind: 'columns', names: ['a', 'b'], widths: [1, 2], separator: null },
   number: { kind: 'number' },
   integer: { kind: 'integer' },

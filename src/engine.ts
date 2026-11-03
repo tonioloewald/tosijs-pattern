@@ -21,6 +21,8 @@ export type Captures = Record<string, unknown>
 
 /** What a node matched: where it ended, what it captured, and its value. */
 export interface Hit {
+  /** Where the match begins, when that is not where it was tried: after a `startAt` skip. */
+  start?: number
   end: number
   caps: Captures | null
   /** Each capture's matched TEXT, by name (`caps` holds its value). Absent where `caps` is null. */
@@ -169,14 +171,21 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       let at = pos
       let caps: Captures | null = null
       let texts: Texts | null = null
-      for (const item of node.items) {
-        const h = match(item, ctx, at)
+      let start: number | undefined
+      let last: Hit | null = null
+      for (let i = 0; i < node.items.length; i++) {
+        const h = match(node.items[i]!, ctx, at)
         if (!h) return null
+        if (i === 0) start = h.start
         at = h.end
         caps = merge(caps, h.caps)
         texts = merge(texts, h.texts ?? null) as Texts | null
+        last = h
       }
-      return { end: at, caps, texts, value: input.slice(pos, at) }
+      if (start === undefined) return { end: at, caps, texts, value: input.slice(pos, at) }
+      // After a skip, the match is what follows it: one step's own value, or the text.
+      const value = node.items.length === 2 ? last!.value : input.slice(start, at)
+      return { start, end: at, caps, texts, value }
     }
     case 'oneOf': {
       for (const option of node.options) {
@@ -234,9 +243,10 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       const h = match(node.item, ctx, pos)
       if (!h) return null
       return {
+        ...(h.start !== undefined ? { start: h.start } : {}),
         end: h.end,
         caps: merge(h.caps, { [node.name]: h.value }),
-        texts: merge(h.texts ?? null, { [node.name]: input.slice(pos, h.end) }) as Texts,
+        texts: merge(h.texts ?? null, { [node.name]: input.slice(h.start ?? pos, h.end) }) as Texts,
         value: h.value,
       }
     }
@@ -268,6 +278,22 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       return pos === input.length || input[pos] === '\r' || (input[pos] === '\n' && input[pos - 1] !== '\r')
         ? { end: pos, caps: null, value: '' }
         : fail(ctx, pos, expectation(node))
+    case 'startAt': {
+      ctx.quiet++
+      try {
+        for (let at = pos; at <= input.length; at++) {
+          step(ctx)
+          const h = match(node.item, ctx, at)
+          if (h) {
+            const start = node.after ? h.end : at
+            return { start, end: start, caps: null, value: '' }
+          }
+        }
+      } finally {
+        ctx.quiet--
+      }
+      return fail(ctx, input.length, expectation(node.item))
+    }
     case 'until': {
       ctx.quiet++
       try {

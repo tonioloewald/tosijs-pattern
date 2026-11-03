@@ -64,7 +64,7 @@ The goals, as the owner stated them (2026-11-03), and the cards that serve each:
 ## Commands
 
 ```sh
-bun test                                   # the suite (182 tests)
+bun test                                   # the suite (187 tests)
 bunx tsc --noEmit                          # typecheck
 bun scripts/run-examples.ts README.md docs-src/*.md   # run every live example (stub preview)
 bun bin/site.ts --build                    # build the doc site (docs/) and the library (dist/)
@@ -117,7 +117,7 @@ Built and verified:
 - `fromRegex()`: translates where it can prove equivalence, refuses the rest with a coded reason.
   67% of tjs-lang's regexes translate (53% of a large `node_modules`), every one agreeing with its
   regex on generated inputs; the check was mutation-checked (`reports/from-regex-2026-11-03.md`).
-- 182 tests. A guard test fails if a node kind is missing from the engine, `describe`,
+- 187 tests. A guard test fails if a node kind is missing from the engine, `describe`,
   `fromJSON` or `toCode`; every `toCode()` output is run and must rebuild the same pattern (and,
   for `fromRegex` output, agree with the regex). The semantics tests were mutation-checked: making repetition give back, or `oneOf`
   take the longest, turns 10 red. A differential corpus compares patterns with the regex a

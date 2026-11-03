@@ -60,6 +60,7 @@ next character literal. There are no class escapes inside it: name the noun inst
 
 | Method | Matches | Regex |
 | --- | --- | --- |
+| `startAt(p)`, `startAfter(p)` | a pattern's FIRST step: skip to the first `p` (or past it). The skipped text is consumed but not matched, so the match, its text and value begin there. With `findAll`, `pattern.startAfter('$').number()` finds each number after a `$`, without the `$` | `(?<=\$)` for searching, roughly |
 | `start()`, `end()` | the start or end of the input | `^`, `$` |
 | `lineStart()`, `lineEnd()` | the start or end of a line, where a line break is `\r\n`, `\n` or `\r` (the same as `lineBreak()`), so a file's lines are the same whichever convention wrote it | `^`, `$` with `m`, nearly: a regex also breaks lines inside `\r\n` and at `\u2028`/`\u2029` |
 | `ifFollowedBy(p)` | if `p` comes next | `(?=p)` |
@@ -113,7 +114,8 @@ const found = def.find(source)
 show(preview, { 'def.describe()': def.describe(), 'found.captures': found.captures })
 ```
 
-A fixed-width table, after its header line:
+A fixed-width table, after its header line. `startAfter` skips the header: the match, and so
+its value, begins after it.
 
 ```js
 import { pattern } from 'tosijs-pattern'
@@ -125,9 +127,9 @@ const rows = pattern.columns([
   { name: 'qty', width: 6 },
   { name: 'price', width: 8 },
 ])
-const table = pattern.restOfLine().lineBreak().lines(rows).as('rows')
+const table = pattern.startAfter(pattern.lineBreak()).lines(rows)
 
-show(preview, { 'table.parse(report).captures.rows': table.parse(report).captures.rows })
+show(preview, { 'table.describe()': table.describe(), 'table.parse(report).value': table.parse(report).value })
 ```
 
 A row is never silently cut: a line longer than its columns is a parse error at the column

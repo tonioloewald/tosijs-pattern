@@ -70,6 +70,8 @@ export function describe(node: Node): string {
       return 'the start of a line'
     case 'lineEnd':
       return 'the end of a line'
+    case 'startAt':
+      return `starting ${node.after ? 'after' : 'at'} ${group(node.item)}`
     case 'until':
       return `everything up to ${group(node.item)}`
     case 'quoted':
@@ -89,6 +91,10 @@ export function describe(node: Node): string {
         ? `a row of columns ${node.names.map((n, i) => `${n} (${node.widths![i]} wide)`).join(', ')}`
         : `a row of ${node.names.join(', ')} separated by ${group(node.separator!)}`
     case 'separatedBy':
+      if (node.trailing && !node.min && node.separator.kind === 'describedAs' && node.separator.label === 'a line break')
+        return node.item.kind === 'describedAs' && node.item.label === 'the rest of the line'
+          ? 'lines'
+          : `${group(node.item)}, one per line`
       return `${node.min ? `at least ${node.min} of ` : ''}${group(node.item)} separated by ${group(node.separator)}`
     case 'indentedBlock':
       return 'an indented block'

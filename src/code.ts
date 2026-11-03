@@ -112,6 +112,8 @@ export function toCode(node: Node, nouns: Record<Named, Node>, pieces: Record<st
         return `.${n.kind}()`
       case 'until':
         return `.until(${arg(n.item)})`
+      case 'startAt':
+        return `.${n.after ? 'startAfter' : 'startAt'}(${arg(n.item)})`
       case 'quoted':
         return `.quoted(${quote(n.quote)}${n.escape ? `, { escape: ${quote(n.escape)} }` : ''})`
       case 'balanced': {
