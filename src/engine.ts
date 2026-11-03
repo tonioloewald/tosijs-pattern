@@ -52,6 +52,12 @@ export interface Context {
   expected: Set<string>
   /** > 0 inside a zero-width check, whose failures are not the user's errors. */
   quiet: number
+  /**
+   * Per skip node: tried from `from`, its target first matched at `at` (-1: nowhere after).
+   * The answer is the same from any position in [from, at], so a search reuses it instead of
+   * scanning again from every start: that keeps `find`/`findAll` with a skip linear.
+   */
+  skips?: Map<Node, { from: number; at: number }>
 }
 
 export function context(input: string, maxSteps: number): Context {
@@ -279,20 +285,27 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
         ? { end: pos, caps: null, value: '' }
         : fail(ctx, pos, expectation(node))
     case 'startAt': {
-      ctx.quiet++
-      try {
-        for (let at = pos; at <= input.length; at++) {
-          step(ctx)
-          const h = match(node.item, ctx, at)
-          if (h) {
-            const start = node.after ? h.end : at
-            return { start, end: start, caps: null, value: '' }
+      const known = ctx.skips?.get(node)
+      let found = -1
+      if (known && pos >= known.from && (known.at < 0 || pos <= known.at)) found = known.at
+      else {
+        ctx.quiet++
+        try {
+          for (let at = pos; at <= input.length; at++) {
+            step(ctx)
+            if (match(node.item, ctx, at)) {
+              found = at
+              break
+            }
           }
+        } finally {
+          ctx.quiet--
         }
-      } finally {
-        ctx.quiet--
+        ;(ctx.skips ??= new Map()).set(node, { from: pos, at: found })
       }
-      return fail(ctx, input.length, expectation(node.item))
+      if (found < 0) return fail(ctx, input.length, expectation(node.item))
+      const start = node.after ? match(node.item, ctx, found)!.end : found
+      return { start, end: start, caps: null, value: '' }
     }
     case 'until': {
       ctx.quiet++

@@ -72,7 +72,7 @@ and refuses when it cannot. The proof is a local check:
 | Regex | Pattern | Notes |
 | --- | --- | --- |
 | `(?=x)`, `(?!x)` | `ifFollowedBy`, `ifNotFollowedBy` | direct |
-| `(?<=x)`, `(?<!x)` | refused | 0.5% of regexes in our census; a lookbehind usually stands in for a capture |
+| `(?<=x)`, `(?<!x)` | refused; write `pattern.startAfter(x)…` | for a search, `startAfter(x)` is what a lookbehind is usually for: the match begins after `x`, which is not part of it. Not translated automatically: with `findAll`, a lookbehind can look back into the previous match, and a skip cannot |
 | `\1`, `\k<n>` | refused | backreferences are memory, not matching; 3% |
 | lazy `*?`, `+?` | `until(…)` when followed by a literal, else refused | 7% |
 | `i` flag | `anyCase` / both-case ranges | |

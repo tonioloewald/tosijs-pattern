@@ -35,5 +35,6 @@
   line, its value the list. `listOf(…, { trailing: true })` allows a final separator.
 - `startAt(p)` / `startAfter(p)`: a pattern's first step, skipping to (or past) the first `p`;
   the match, its text and its value begin there. `pattern.startAfter(pattern.lineBreak()).lines(rows)`
-  is a table's rows after its header line.
+  is a table's rows after its header line. For a search it is the usual use of a lookbehind:
+  `pattern.startAfter('$').number()` finds numbers without their `$`; it stays linear.
 - A doc site (tosijs-ui) whose examples run live in the page.

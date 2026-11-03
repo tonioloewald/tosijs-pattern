@@ -257,7 +257,7 @@ class Parser {
       const negative = this.src[this.pos - 1] === '!'
       node = { t: 'look', negative, item: this.alternation(), at }
     } else if (this.eat('?<=') || this.eat('?<!'))
-      throw new RegexRefusal('lookbehind', at, 'a lookbehind looks at text BEFORE the position, which Pattern cannot yet', 'Capture what comes before instead, or match it and keep only the part you need')
+      throw new RegexRefusal('lookbehind', at, 'a lookbehind looks at text BEFORE the position, which Pattern cannot yet', 'For a search, begin the pattern with .startAfter(x): the match starts after x, which is not part of it')
     else if (this.eat('?<')) {
       const end = this.src.indexOf('>', this.pos)
       if (end < 0) throw this.syntax('unterminated group name')

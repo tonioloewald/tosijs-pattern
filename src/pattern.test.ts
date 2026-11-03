@@ -418,6 +418,26 @@ group('startAt / startAfter: where the match begins', () => {
     expect(() => pattern.startAfter(pattern.digit().as('d')).find('1')).toThrow(/skipped/)
   })
 
+  it('a search with a skip stays linear, whether or not the target is there', () => {
+    const p = pattern.startAfter('$').digits()
+    const perChar = (s: string) => {
+      let lo = 1
+      let hi = 1e9
+      while (lo < hi) {
+        const mid = Math.floor((lo + hi) / 2)
+        try {
+          p.findAll(s, { maxSteps: mid })
+          hi = mid
+        } catch {
+          lo = mid + 1
+        }
+      }
+      return lo / s.length
+    }
+    for (const make of [(n: number) => 'x'.repeat(n), (n: number) => '$x'.repeat(n / 2), (n: number) => '$1 '.repeat(n / 3)])
+      expect(perChar(make(24_000))).toBeLessThan(perChar(make(1_200)) * 1.5 + 1)
+  })
+
   it('toCode writes it back', () => {
     expect(pattern.startAfter(pattern.lineBreak()).lines().toCode()).toBe('pattern.startAfter(pattern.lineBreak()).lines()')
     expect(pattern.startAt('# ').restOfLine().toCode()).toBe("pattern.startAt('# ').restOfLine()")
