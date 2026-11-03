@@ -23,7 +23,7 @@ The goals, as the owner stated them (2026-11-03), and the cards that serve each:
 
 1. **A powerful, intuitive and safe tool for parsing text**: the classic cases where, using a
    regex, you now have two problems. Safety: no backtracking, the step budget, validated JSON;
-   linearity is #3750. Power: `quoted`, `balanced`, `separatedBy`, values; the CSV showcase is
+   linearity is #3750. Power: `quoted`, `balanced`, `listOf`, values; the CSV showcase is
    #3761. NOT covered yet: recursive grammars (a rule that refers to itself, for JSON,
    expressions, nested structure beyond `balanced`). Open question for the owner.
 2. **Grokkable**: an agent reading code that uses Pattern, WITHOUT documentation, infers what it
@@ -50,8 +50,8 @@ The goals, as the owner stated them (2026-11-03), and the cards that serve each:
    library exists to run where a regex engine is a liability: untrusted patterns, metered VMs,
    no ReDoS.)
 3. **Patterns are data.** A pattern is a tree of plain JSON nodes (`src/nodes.ts`), a CLOSED
-   set. Adding a kind means adding it in four places: `nodes.ts`, the engine, `describe.ts`,
-   and `json.ts`'s validator. `fromJSON` must refuse anything else, with the path to it.
+   set. Adding a kind means adding it in five places: `nodes.ts`, the engine, `describe.ts`,
+   `json.ts`'s validator, and `code.ts` (`toCode`), plus a chain method in `pattern.ts`. `fromJSON` must refuse anything else, with the path to it.
 4. **No backtracking; cost is visible and bounded.** Repetition is possessive, `oneOf` is
    ordered, and every call has a step budget. Performance claims are tested by COUNTING WORK
    (steps), never by timing, which is flaky under load and cannot tell linear from quadratic.
@@ -64,7 +64,7 @@ The goals, as the owner stated them (2026-11-03), and the cards that serve each:
 ## Commands
 
 ```sh
-bun test                                   # the suite (116 tests)
+bun test                                   # the suite (164 tests)
 bunx tsc --noEmit                          # typecheck
 bun scripts/run-examples.ts README.md docs-src/*.md   # run every live example (stub preview)
 bun bin/site.ts --build                    # build the doc site (docs/) and the library (dist/)
@@ -88,6 +88,7 @@ To check the live examples in a real browser without the dev server: serve `docs
 | `src/engine.ts` | The PEG interpreter, the step budget, best-failure tracking |
 | `src/pattern.ts` | The vocabulary (nouns and verbs) and the `Pattern` object's operations |
 | `src/describe.ts` | `describe()`: a pattern read aloud |
+| `src/code.ts` | `toCode()`: a pattern written as the chain that builds it |
 | `src/json.ts` | `fromJSON`: validated reading of untrusted JSON |
 | `src/regex/` | `fromRegex`: `parse.ts` reads regex syntax (loops, no RegExp), `translate.ts` proves equivalence or refuses |
 | `src/pattern.test.ts` | Tests, including the regex differential corpus |
@@ -100,20 +101,25 @@ To check the live examples in a real browser without the dev server: serve `docs
 **Reviews go in `reviews/` at the repo root, never `docs/reviews/`:** `docs/` is the generated
 site, wiped on each build and served publicly.
 
-## State (2026-11-02)
+## State (2026-11-03)
 
 Built and verified:
 
-- The vocabulary: nouns (`digit`, `letter`, `charIn`, …), verbs (`sequence`, `oneOf`,
-  repetition, `capture`, `followedBy`, …), structure (`until`, `quoted`, `balanced`,
-  `separatedBy`, `number`, `integer`).
+- **The API is a fluent chain from one import** (owner; DECISIONS.md):
+  `pattern.start().digits(3).text('-').digits(4).end()`. Never write free-function vocabulary
+  (`sequence(…)`, `oneOrMore(digit)`) in code, docs or messages; it was removed. Nouns
+  (`digit()`/`digits(n?, max?)`, `charIn`/`charsIn`, …), verbs (`oneOf`, `optional`,
+  `oneOrMore`, `zeroOrMore`, `repeat`, `group`, `ifFollowedBy`, …), naming (`.as(name)` on the
+  step before, `.describedAs` on the whole), structure (`until`, `quoted`, `balanced`, `listOf`,
+  `number()`, `integer()`). No `then` (it would make patterns thenables).
 - Operations: `matches`, `parse` (with line/column errors), `find`, `findAll`, `occursIn`,
-  `replaceFirst`, `replaceAll`, `split`, `describe`, `toJSON` / `fromJSON`.
+  `replaceFirst`, `replaceAll`, `split`, `describe`, `toCode`, `toJSON` / `fromJSON`.
 - `fromRegex()`: translates where it can prove equivalence, refuses the rest with a coded reason.
   67% of tjs-lang's regexes translate (53% of a large `node_modules`), every one agreeing with its
   regex on generated inputs; the check was mutation-checked (`reports/from-regex-2026-11-03.md`).
-- 116 tests. A guard test fails if a node kind is missing from the engine, `describe` or
-  `fromJSON`. The semantics tests were mutation-checked: making repetition give back, or `oneOf`
+- 164 tests. A guard test fails if a node kind is missing from the engine, `describe`,
+  `fromJSON` or `toCode`; every `toCode()` output is run and must rebuild the same pattern (and,
+  for `fromRegex` output, agree with the regex). The semantics tests were mutation-checked: making repetition give back, or `oneOf`
   take the longest, turns 10 red. A differential corpus compares patterns with the regex a
   fluent engineer would write.
 - The doc site builds clean; all 7 live examples ran in headless Chrome.
@@ -128,7 +134,7 @@ Each is (or should be) a card on the Virta board, project `tosijs-pattern`.
    Next, by measured value: (a) **look-behind** (`\b`, multiline `^`, lookbehind) is 21-26% of
    all regexes and the largest refusal; a `precededBy` node would recover most of it, and is the
    OWNER's decision (a new node kind); (b) recognise structure where backtracking stood in for it
-   (`"(?:[^"\\]|\\.)*"` → `quoted`, `[^,]*(?:,[^,]*)*` → `separatedBy`), which also makes the
+   (`"(?:[^"\\]|\\.)*"` → `quoted`, `[^,]*(?:,[^,]*)*` → `listOf`), which also makes the
    output read better; (c) provably-safe reordering of overlapping alternations; (d) the third
    corpus, regexes models write (#3749).
 2. **Hone the API by measuring it: obviousness, legibility, writability, readability, economy**
@@ -190,17 +196,15 @@ Each is (or should be) a card on the Virta board, project `tosijs-pattern`.
 
 ## Open decisions (the owner's)
 
-- **Names**, to be measured, not argued: `separatedBy`, `describedAs`, `occursIn`, `caseless`,
-  `matches` vs `parse`, `until`, `oneOf` (ordered; should it be `firstOf`?), and whether nouns
-  should be plural-aware (`oneOrMore(digits)`?).
+- **Names**, to be measured, not argued: `listOf`, `describedAs`, `occursIn`, `anyCase`,
+  `ifFollowedBy`, `matches` vs `parse`, `until`, `oneOf` (ordered; should it be `firstOf`?), and
+  the count spelling (`digits(2, Infinity)` for at least 2). Plural nouns are settled (the chain).
 - **Should `oneOf` warn** when an earlier option is a prefix of a later one (`oneOf('a', 'ab')`)?
   That is the most likely PEG surprise.
 
 ## Known rough edges
 
-- `describe()` of a `charIn` repetition shows the normalised ranges (`characters in 0-9a-z` for
-  `charIn('a-z0-9')`); it should keep the author's spelling.
-- `caseless` compares with `toLowerCase`, which changes length for a few characters (`İ`).
+- `anyCase` compares with `toLowerCase`, which changes length for a few characters (`İ`).
 - `quoted` removes an escape only before the quote or the escape itself (`\n` stays `\n`):
   decoding escape sequences is a separate piece (`jsonString`?), not a flag.
 - `balanced`'s quote characters are single characters, and it does not understand comments or

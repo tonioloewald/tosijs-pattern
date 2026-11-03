@@ -4,8 +4,9 @@
 
 ### Added
 
-- The core: a fluent, declarative pattern vocabulary (nouns, verbs, and the structure regex
-  cannot express: `until`, `quoted`, `balanced`, `separatedBy`), a PEG engine with no
+- The core: a fluent CHAIN from one import, `pattern.start().digits(3).text('-').end()` (nouns,
+  verbs, `.as()` captures, and the structure regex cannot express: `until`, `quoted`,
+  `balanced`, `listOf`), a PEG engine with no
   backtracking and a step budget, `describe()` (a pattern read aloud), validated
   `toJSON`/`fromJSON`, and the operations `matches`, `parse`, `find`, `findAll`, `occursIn`,
   `replaceFirst`, `replaceAll`, `split`.
@@ -22,4 +23,6 @@
 - `find`, `findAll` (and so `replaceAll`, `split`, `occursIn`) step one whole code point at a
   time: they no longer try a match in the middle of a surrogate pair. Found by `fromRegex`'s
   differential check on `/[\uD800-\uDFFF]/u`.
+- `toCode()`: any pattern written as the chain that builds it, so `fromRegex(re).toCode()` gives
+  a regex back as readable code.
 - A doc site (tosijs-ui) whose examples run live in the page.

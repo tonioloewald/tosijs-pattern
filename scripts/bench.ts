@@ -9,7 +9,7 @@
  * Inputs are DISTINCT per call where it matters: JavaScriptCore appears to cache test() on an
  * identical regex and string, which once made native CSV matching read 0.00ms.
  */
-import { sequence, start, end, times, digit, oneOrMore, charIn, capture, number, letter, wordChar, zeroOrMore, oneOf, whitespace, charNotIn, quoted, optional } from '../src/index.ts'
+import { pattern } from '../src/index.ts'
 
 // tjs-lang's linear engine, if tjs-lang is checked out beside this repo: it is what AsyncJS runs
 // today instead of native regex, so it is the comparison that matters for the VM builtin.
@@ -29,18 +29,18 @@ const emails = Array.from({ length: 20000 }, (_, i) => (i % 4 ? `user${i}@exampl
 const csvLines = Array.from({ length: 500 }, (_, j) => Array.from({ length: 200 }, (_, i) => (i % 5 ? `field${i}_${j}` : `"quoted, ${i} ${j}"`)).join(','))
 const csvLine = Array.from({ length: 200 }, (_, i) => (i % 5 ? `field${i}` : `"quoted, ${i}"`)).join(',')
 
-const phoneP = sequence(start, times(3, digit), '-', times(4, digit), end)
+const phoneP = pattern.start().digits(3).text('-').digits(4).end()
 const phoneR = /^\d{3}-\d{4}$/
-const emailP = sequence(start, oneOrMore(charIn('a-z0-9._')), '@', oneOrMore(charIn('a-z0-9-')), oneOrMore(sequence('.', oneOrMore(letter))), end)
+const emailP = pattern.start().charsIn('a-z0-9._').text('@').charsIn('a-z0-9-').oneOrMore(pattern.text('.').letters()).end()
 const emailR = /^[a-z0-9._]+@[a-z0-9-]+(?:\.[a-zA-Z]+)+$/
-const numP = number
+const numP = pattern.number()
 const numR = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/g
-const wordP = oneOrMore(letter)
+const wordP = pattern.letters()
 const wordR = /[A-Za-z]+/g
-const dollarP = sequence('$', capture('n', number))
+const dollarP = pattern.text('$').number().as('n')
 const dollarR = /\$(-?(?:0|[1-9]\d*)(?:\.\d+)?)/g
-const fieldP = oneOf(quoted('"'), zeroOrMore(charNotIn(',')))
-const csvP = sequence(fieldP, zeroOrMore(sequence(',', fieldP)))
+const fieldP = pattern.oneOf(pattern.quoted('"'), pattern.optional(pattern.charsNotIn(',')))
+const csvP = pattern.group(fieldP).zeroOrMore(pattern.text(',').group(fieldP))
 const csvR = /^(?:"[^"]*"|[^,]*)(?:,(?:"[^"]*"|[^,]*))*$/
 
 const L = {

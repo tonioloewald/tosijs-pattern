@@ -1,5 +1,5 @@
 import { describe as group, it, expect } from 'bun:test'
-import { fromRegex, RegexRefusal, sequence, oneOrMore, digit, type RefusalCode } from './index'
+import { fromRegex, RegexRefusal, pattern, type RefusalCode } from './index'
 import { differential, inputsFor } from '../scripts/regex-diff'
 
 /**
@@ -33,6 +33,13 @@ group('fromRegex translates where backtracking cannot matter', () => {
   for (const re of [...TRANSLATES.map(([r]) => r), ...MORE])
     it(`${re} agrees with the regex on generated inputs`, () => {
       expect(differential(re, fromRegex(re), inputsFor(re.source, re.flags, 300, 7))).toEqual([])
+    })
+
+  for (const re of [...TRANSLATES.map(([r]) => r), ...MORE])
+    it(`${re}: its toCode() builds a pattern that agrees too`, () => {
+      const code = fromRegex(re).toCode()
+      const built = new Function('pattern', `return ${code}`)(pattern)
+      expect(differential(re, built, inputsFor(re.source, re.flags, 100, 3))).toEqual([])
     })
 
   it('accepts a source string and flags', () => {
@@ -84,7 +91,7 @@ group('fromRegex refuses what would need backtracking (or what Pattern lacks), s
 
 group('the differential check catches a wrong translation', () => {
   it('possessive digits are NOT /\\d+5/, and the check says so', () => {
-    const wrong = sequence(oneOrMore(digit), '5')
+    const wrong = pattern.digits().text('5')
     expect(differential(/\d+5/, wrong, inputsFor('\\d+5', '', 100, 1)).length).toBeGreaterThan(0)
   })
 })

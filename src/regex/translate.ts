@@ -26,7 +26,7 @@
  */
 import type { Node, Ranges } from '../nodes'
 import { complement, intersect, union, sameRanges, rangeString } from '../chars'
-import { Pattern, digit, hexDigit, letter, lowercase, uppercase, wordChar, whitespace } from '../pattern'
+import { Pattern, NOUNS } from '../pattern'
 import { parseRegex, RegexRefusal, type RNode } from './parse'
 
 export { RegexRefusal, type RefusalCode } from './parse'
@@ -61,8 +61,8 @@ const NOTHING: Next = { chars: [], end: false, always: false }
 const EMPTY: Node = { kind: 'repeat', item: { kind: 'anyChar' }, min: 0, max: 0 }
 const isEmpty = (n: Node) => n.kind === 'repeat' && n.max === 0
 
-const NOUNS: [Ranges, Node][] = [digit, hexDigit, letter, lowercase, uppercase, wordChar, whitespace].map(
-  (p) => [(p.node as { ranges: Ranges }).ranges, p.node]
+const NAMED: [Ranges, Node][] = (['digit', 'hexDigit', 'letter', 'lowercaseLetter', 'uppercaseLetter', 'wordChar', 'whitespace'] as const).map(
+  (k) => [(NOUNS[k] as { ranges: Ranges }).ranges, NOUNS[k]]
 )
 
 /** Can the node match without consuming a character (in some situation)? */
@@ -153,9 +153,9 @@ class Translator {
       }
       case 'capture': {
         if (inLook)
-          throw new RegexRefusal('capture-in-lookahead', n.at, `group ${n.name} captures inside a lookahead, which consumes nothing`, 'Capture outside the lookahead: sequence(followedBy(x), capture(name, x))')
+          throw new RegexRefusal('capture-in-lookahead', n.at, `group ${n.name} captures inside a lookahead, which consumes nothing`, 'Capture outside the lookahead: pattern.ifFollowedBy(x).group(x).as(name)')
         if (inList)
-          throw new RegexRefusal('capture-in-repetition', n.at, `group ${n.name} is repeated, and a regex keeps only its LAST repetition`, `Capture the whole repetition, or each item: capture('items', oneOrMore(capture('item', …)))`)
+          throw new RegexRefusal('capture-in-repetition', n.at, `group ${n.name} is repeated, and a regex keeps only its LAST repetition`, `Capture the whole repetition, or each item: pattern.oneOrMore(pattern.….as('item')).as('items')`)
         return { kind: 'capture', name: n.name, item: this.translate(n.item, k, inList, inLook) }
       }
       case 'alt':
@@ -179,7 +179,7 @@ class Translator {
         return { kind: 'literal', text: String.fromCharCode(b), caseless: true }
     }
     if (sameRanges(ranges, ALL)) return { kind: 'anyChar' }
-    for (const [r, noun] of NOUNS) if (sameRanges(r, ranges)) return noun
+    for (const [r, noun] of NAMED) if (sameRanges(r, ranges)) return noun
     if (negated) return { kind: 'chars', ranges: complement(ranges), negated: true }
     return { kind: 'chars', ranges }
   }
@@ -212,9 +212,9 @@ class Translator {
    */
   lazy(item: RNode, rep: Extract<RNode, { t: 'repeat' }>, rest: RNode[], k: Next, inList: boolean, inLook: boolean): Node {
     if (!k.always)
-      throw new RegexRefusal('lazy', rep.at, 'this lazy quantifier is followed by more than the end of the regex, so its stopping point can depend on a later retry', 'Say where it stops: until(x) then x, at the end')
+      throw new RegexRefusal('lazy', rep.at, 'this lazy quantifier is followed by more than the end of the regex, so its stopping point can depend on a later retry', 'Say where it stops: .until(x) then x, at the end')
     if (rep.item.t !== 'set' || (rep.max !== null) || rep.min > 1)
-      throw new RegexRefusal('lazy', rep.at, 'a lazy quantifier is read only on one character class (x*? or x+?)', 'Say where it stops: until(x)')
+      throw new RegexRefusal('lazy', rep.at, 'a lazy quantifier is read only on one character class (x*? or x+?)', 'Say where it stops: .until(x)')
     const r = this.sequence(rest, k, inList, inLook)
     const c = this.set(rep.item)
     const stop = rep.item.negated || !sameRanges(rep.item.ranges, ALL)
@@ -267,7 +267,7 @@ class Translator {
         if (min === 0) return EMPTY
         return this.repetition({ ...n, lazy: false, max: min }, k, inList, inLook)
       }
-      throw new RegexRefusal('lazy', n.at, 'this lazy quantifier is followed by more than the end of the regex, so its stopping point can depend on a later retry', 'Say where it stops: until(x) then x')
+      throw new RegexRefusal('lazy', n.at, 'this lazy quantifier is followed by more than the end of the regex, so its stopping point can depend on a later retry', 'Say where it stops: .until(x) then x')
     }
     if (nullable(n.item))
       throw new RegexRefusal('empty-repetition', n.at, 'the repeated item can match nothing, so how often it repeats is not determined', 'Repeat something that always consumes a character')
@@ -275,7 +275,7 @@ class Translator {
     if (!k.always && min !== max) {
       const both = intersect(starts, k.chars)
       if (both.length)
-        throw new RegexRefusal('repetition-backtracks', n.at, `this repetition can consume ${quote(both)}, which what follows it can also start with, so the regex only matches by giving some back`, 'Say where the repetition stops: repeat only what cannot start what follows, or use until(…)')
+        throw new RegexRefusal('repetition-backtracks', n.at, `this repetition can consume ${quote(both)}, which what follows it can also start with, so the regex only matches by giving some back`, 'Say where the repetition stops: repeat only what cannot start what follows, or use .until(…)')
     }
     // Inside the item, what follows is another item or k; the rest always succeeds only once the
     // minimum is met.

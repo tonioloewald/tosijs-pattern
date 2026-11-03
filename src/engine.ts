@@ -5,7 +5,7 @@
  *   - `oneOf` is ORDERED: the first option that matches wins, and the others are never tried
  *     after it, even if the rest of the pattern then fails.
  *   - Repetition is POSSESSIVE: it takes as many as it can and never gives any back. So
- *     `sequence(oneOrMore(digit), '5')` never matches `"1235"`: the digits took the 5.
+ *     `pattern.digits().text('5')` never matches `"1235"`: the digits took the 5.
  *   - Nothing backtracks except inside one `oneOf` (trying the next option) and the zero-width
  *     checks. That is what makes a pattern's cost readable from its shape.
  *

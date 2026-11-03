@@ -2,84 +2,107 @@
 
 # Vocabulary
 
-Every name is chosen by one test: **read the pattern aloud, and it should say what it matches.**
-`describe()` does exactly that, so any pattern can be checked against its intent.
+Every name is chosen by one test: **read the chain aloud, and it should say what it matches.**
+`describe()` does exactly that, so any pattern can be checked against its intent, and
+`toCode()` writes any pattern back as its chain.
 
 ```js
-import { sequence, capture, oneOrMore, letter, wordChar, zeroOrMore, optional, charIn } from 'tosijs-pattern'
+import { pattern } from 'tosijs-pattern'
 import { show } from 'tosijs-pattern/demo'
 
-const identifier = sequence(letter, zeroOrMore(wordChar))
-const flag = sequence('--', capture('name', identifier), optional(sequence('=', capture('value', oneOrMore(charIn('a-z0-9'))))))
+const identifier = pattern.letter().optional(pattern.wordChars())
+const flag = pattern.text('--').group(identifier).as('name').optional(pattern.text('=').charsIn('a-z0-9').as('value'))
 
 show(preview, flag.describe(), flag.parse('--level=9').captures)
 ```
 
-## Nouns: one character
+Everything starts from `pattern`, the empty pattern. Each method returns a NEW pattern with
+one more step, so a chain reads in the order it matches, and a pattern is a value you can name
+and reuse (`identifier` above). A method's argument is a string (literal text) or another chain
+started from `pattern`.
 
-| Name | Matches | Regex |
-| --- | --- | --- |
-| `digit` | 0-9 | `\d` |
-| `hexDigit` | 0-9, a-f, A-F | `[0-9a-fA-F]` |
-| `letter` | A-Z, a-z (ASCII for now) | `[A-Za-z]` |
-| `lowercase`, `uppercase` | a-z, A-Z | `[a-z]`, `[A-Z]` |
-| `wordChar` | A-Z, a-z, 0-9, _ | `\w` |
-| `whitespace` | exactly JavaScript's `\s` | `\s` |
-| `blank` | space or tab | `[ \t]` |
-| `anyChar` | any character, line breaks included | `[^]`, or `.` with `s` |
-| `charIn('a-z_')` | one of a range string | `[a-z_]` |
-| `charNotIn(',\n')` | anything else | `[^,\n]` |
+## Nouns: characters
+
+A singular noun is one character. A plural is one or more, and takes a count: `(n)` exactly n,
+`(min, max)` a range, `(min, Infinity)` at least min. Zero or more is
+`optional(pattern.digits())`.
+
+| One | Several | Matches | Regex |
+| --- | --- | --- | --- |
+| `digit()` | `digits()` | 0-9 | `\d` |
+| `hexDigit()` | `hexDigits()` | 0-9, a-f, A-F | `[0-9a-fA-F]` |
+| `letter()` | `letters()` | A-Z, a-z (ASCII for now) | `[A-Za-z]` |
+| `lowercaseLetter()` | `lowercaseLetters()` | a-z | `[a-z]` |
+| `uppercaseLetter()` | `uppercaseLetters()` | A-Z | `[A-Z]` |
+| `wordChar()` | `wordChars()` | A-Z, a-z, 0-9, _ | `\w` |
+| | `whitespace()` | exactly JavaScript's `\s` (`whitespace(1)` for one) | `\s` |
+| `blank()` | `blanks()` | space or tab | `[ \t]` |
+| `anyChar()` | `anyChars()` | any character, line breaks included | `[^]`, or `.` with `s` |
+| `lineBreak()` | `lineBreaks()` | `\r\n`, `\n` or `\r` | `\r\n\|\n\|\r` |
+| `charIn('a-z_')` | `charsIn('a-z_')` | one of a range string | `[a-z_]` |
+| `charNotIn(',\n')` | `charsNotIn(',\n')` | anything else | `[^,\n]` |
 
 A range string is characters and `x-y` ranges. A `-` first or last is itself, and `\` makes the
 next character literal. There are no class escapes inside it: name the noun instead.
 
+## Text
+
+| Method | Matches | Regex |
+| --- | --- | --- |
+| `text('a.b')` | exactly that text; nothing in it is special | `a\.b` |
+| `anyCase('yes')` | the text, letters in any case | `(?i:yes)` |
+
 ## Positions: match no characters
 
-| Name | Matches | Regex |
+| Method | Matches | Regex |
 | --- | --- | --- |
-| `start`, `end` | the start or end of the input | `^`, `$` |
-| `lineStart`, `lineEnd` | the start or end of a line | `^`, `$` with `m` |
-| `followedBy(p)` | if `p` comes next | `(?=p)` |
-| `notFollowedBy(p)` | if `p` does not come next | `(?!p)` |
+| `start()`, `end()` | the start or end of the input | `^`, `$` |
+| `lineStart()`, `lineEnd()` | the start or end of a line | `^`, `$` with `m` |
+| `ifFollowedBy(p)` | if `p` comes next | `(?=p)` |
+| `ifNotFollowedBy(p)` | if `p` does not come next | `(?!p)` |
 
-## Verbs: combine patterns
+## Combining
 
-| Name | Matches | Regex |
+| Method | Matches | Regex |
 | --- | --- | --- |
-| `sequence(a, b, …)` | each in order | `ab…` |
 | `oneOf(a, b, …)` | the FIRST that matches | `a\|b` |
 | `optional(p)` | `p` or nothing | `p?` |
-| `zeroOrMore(p)`, `oneOrMore(p)` | as many as match | `p*`, `p+` |
-| `times(n, p)` | exactly n | `p{n}` |
-| `between(m, n, p)`, `atLeast(n, p)`, `atMost(n, p)` | bounded repetition | `p{m,n}`, `p{n,}`, `p{0,n}` |
-| `caseless('text')` | the text in any case | `(?i:text)` |
-| `capture('name', p)` | `p`, recording it | `(?<name>p)` |
-| `describedAs('an id', p)` | `p`, named for messages | (none) |
+| `oneOrMore(p)`, `zeroOrMore(p)` | as many as match | `p+`, `p*` |
+| `repeat(p, n)`, `repeat(p, min, max)` | exactly n, or min to max (`Infinity`: no limit) | `p{n}`, `p{m,n}` |
+| `group(p)` | `p`, as one step (so `.as()` after it takes all of it) | `(?:p)` |
 
-A plain string anywhere is that literal text.
+## Naming
+
+| Method | Does | Regex |
+| --- | --- | --- |
+| `.as('name')` | captures the step just before it | `(?<name>…)` |
+| `.describedAs('an id')` | names the whole pattern, for messages and `describe()` | (none) |
+
+There is no `then`: an object with a `then` method is taken for a promise by `await`, so a
+pattern does not have one. `text()` and `group()` add a step.
 
 ## Structure: what regex cannot express
 
-| Name | Matches |
+| Method | Matches |
 | --- | --- |
 | `until(p)` | everything up to the first `p` (`.*?` before `p`, without the retrying) |
 | `quoted('"', { escape })` | a quoted span; `escape` is a character or `'double'` (CSV's `""`); its value is the inside |
 | `balanced('(', ')', { quotes })` | a nested span that closes at its own delimiter, skipping quoted text; its value is the inside |
-| `separatedBy(item, sep)` | a list; its value is an array |
-| `number`, `integer` | JSON's number grammar; the value is a number |
+| `listOf(item, { separatedBy, atLeast })` | a list; its value is an array |
+| `number()`, `integer()` | JSON's number grammar; the value is a number |
 
 ## Values and captures
 
-A capture records its pattern's VALUE: the text it matched, unless the piece has a better one
-(`number` gives a number, `quoted` the unescaped inside, `separatedBy` an array). A capture
+A capture records its step's VALUE: the text it matched, unless the piece has a better one
+(`number()` gives a number, `quoted` the unescaped inside, `listOf` an array). A capture
 inside a repetition is collected by capturing the repetition, one entry per item:
 
 ```js
-import { capture, oneOrMore, sequence, letter, integer, optional } from 'tosijs-pattern'
+import { pattern } from 'tosijs-pattern'
 import { show } from 'tosijs-pattern/demo'
 
-const pair = sequence(capture('key', oneOrMore(letter)), '=', capture('value', integer), optional(';'))
-const settings = capture('settings', oneOrMore(pair))
+const pair = pattern.letters().as('key').text('=').integer().as('value').optional(';')
+const settings = pattern.oneOrMore(pair).as('settings')
 
 show(preview, settings.parse('width=3;height=4').captures)
 ```
@@ -89,5 +112,5 @@ result or a match. `{name}` in a replacement template inserts the text (so `$3.5
 `3.50`, and a `quoted` capture keeps its quotes); a replacement function sees both.
 
 A capture that would be silently lost is an error that says what to write instead: inside a
-repetition nobody captures, inside `followedBy`/`notFollowedBy`/`until`'s stopping point, or a
-name used twice where the second would overwrite the first (`oneOf` options may share one).
+repetition nobody captures, inside `ifFollowedBy`/`ifNotFollowedBy`/`until`'s stopping point,
+or a name used twice where the second would overwrite the first (`oneOf` options may share one).

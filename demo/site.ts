@@ -1,7 +1,7 @@
 /*
 Hydration bundle for the tosijs-pattern doc site, loaded by every page.
 
-The `context` assignment lets a live example's `import { oneOrMore, digit } from 'tosijs-pattern'`
+The `context` assignment lets a live example's `import { pattern } from 'tosijs-pattern'`
 resolve to this repo's SOURCE, so the examples always run the code they document. `show` (from
 'tosijs-pattern/demo') prints values into the example's preview, one block each.
 */

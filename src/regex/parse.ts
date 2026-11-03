@@ -76,7 +76,7 @@ const LONG_S = 0x17f
 export function parseRegex(source: string, flagString: string): { ast: RNode; flags: Flags } {
   for (const f of flagString) {
     if (f === 'y')
-      throw new RegexRefusal('unsupported-flag', 0, 'the y (sticky) flag matches only at lastIndex', 'Use find(input, { from }) and check the match starts there')
+      throw new RegexRefusal('unsupported-flag', 0, 'the y (sticky) flag matches only at lastIndex', 'Use .find(input, { from }) and check the match starts there')
     if (f === 'v')
       throw new RegexRefusal('unsupported-flag', 0, 'the v flag (class set syntax) is not read yet')
     if (!'gimsud'.includes(f))
@@ -266,7 +266,7 @@ class Parser {
       this.groups++
       node = { t: 'capture', name, item: this.alternation(), at }
     } else if (this.peek() === '?')
-      throw new RegexRefusal('modifiers', at, 'inline modifiers like (?i:…) are not read yet', 'Use caseless(…) on the part that ignores case')
+      throw new RegexRefusal('modifiers', at, 'inline modifiers like (?i:…) are not read yet', 'Use .anyCase(…) on the part that ignores case')
     else {
       this.groups++
       node = { t: 'capture', name: `$${this.groups}`, item: this.alternation(), at }
@@ -348,7 +348,7 @@ class Parser {
     else if (c === 'w' || c === 'W') r = this.word()
     else if (c === 's' || c === 'S') r = WHITESPACE
     else if ((c === 'p' || c === 'P') && this.flags.u)
-      throw new RegexRefusal('unicode-property', this.pos - 1, `\\${c}{…} needs the Unicode property tables, which Pattern does not carry yet`, 'Name the characters with charIn, or use letter/digit (ASCII)')
+      throw new RegexRefusal('unicode-property', this.pos - 1, `\\${c}{…} needs the Unicode property tables, which Pattern does not carry yet`, 'Name the characters with .charIn(…), or use .letter() / .digit() (ASCII)')
     if (!r) return null
     negated = c === 'D' || c === 'W' || c === 'S'
     this.pos++

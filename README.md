@@ -9,22 +9,24 @@ Almost nobody else can, and nobody can read it at a glance once it grows. tosijs
 writes the reading down:
 
 ```js
-import { sequence, start, times, digit, end } from 'tosijs-pattern'
+import { pattern } from 'tosijs-pattern'
 import { show } from 'tosijs-pattern/demo'
 
-const phone = sequence(start, times(3, digit), '-', times(4, digit), end)
+const phone = pattern.start().digits(3).text('-').digits(4).end()
 
 show(preview, phone.describe(), phone.matches('555-1234'), phone.matches('55-1234'))
 ```
 
-Every pattern can say what it is (`describe()`). Plain strings are literal text, so there is
-nothing to escape, ever. And when something does not match, it says where and why:
+One import. A chain reads in the order it matches, and your editor's autocomplete lists the
+whole vocabulary after `pattern.`. Every pattern can also say what it is (`describe()`). Text
+is always literal, so there is nothing to escape, ever. And when something does not match, it
+says where and why:
 
 ```js
-import { sequence, capture, number, optional, oneOrMore, whitespace } from 'tosijs-pattern'
+import { pattern } from 'tosijs-pattern'
 import { show } from 'tosijs-pattern/demo'
 
-const price = sequence('price:', optional(oneOrMore(whitespace)), capture('amount', number))
+const price = pattern.text('price:').optional(pattern.whitespace()).number().as('amount')
 
 show(
   preview,
@@ -37,19 +39,49 @@ show(
 
 | Regex | Pattern |
 | --- | --- |
-| `\d+` | `oneOrMore(digit)` |
-| `[a-f0-9]{6}` | `times(6, charIn('a-f0-9'))` |
-| `(,\s*)?` | `optional(sequence(',', zeroOrMore(whitespace)))` |
-| `yes\|no` | `oneOf('yes', 'no')` |
-| `(?<year>\d{4})` | `capture('year', times(4, digit))` |
-| `(?!_)` | `notFollowedBy('_')` |
-| `.*?-->` | `until('-->')` |
-| `^…$` | `sequence(start, …, end)` |
+| `\d` | `pattern.digit()` |
+| `\d+` | `pattern.digits()` |
+| `\d{4}` | `pattern.digits(4)` |
+| `[a-f0-9]{6}` | `pattern.charsIn('a-f0-9', 6)` |
+| `\s*` | `pattern.optional(pattern.whitespace())` |
+| `(,\s*)?` | `pattern.optional(pattern.text(',').optional(pattern.whitespace()))` |
+| `yes\|no` | `pattern.oneOf('yes', 'no')` |
+| `(?<year>\d{4})` | `pattern.digits(4).as('year')` |
+| `(?!_)` | `pattern.ifNotFollowedBy('_')` |
+| `.*?-->` | `pattern.until('-->')` |
+| `^…$` | `pattern.start()….end()` |
 
-**Nouns** are characters: `digit`, `letter`, `lowercase`, `hexDigit`, `wordChar`, `whitespace`,
-`anyChar`, `charIn('a-z')`, `charNotIn(',\n')`. **Verbs** take nouns or other patterns:
-`oneOrMore`, `zeroOrMore`, `optional`, `times`, `between`, `atLeast`, `atMost`, `oneOf`,
-`sequence`, `capture`. The full list is in [the vocabulary](docs-src/vocabulary.md).
+The rules, which are meant to be guessable without reading them:
+
+- **A singular noun is one character, a plural is one or more**, and a count says how many:
+  `digit()`, `digits()`, `digits(4)`, `digits(2, 4)`, `digits(2, Infinity)`. The nouns are
+  `digit`, `hexDigit`, `letter`, `lowercaseLetter`, `uppercaseLetter`, `wordChar`,
+  `whitespace`, `blank`, `anyChar`, `lineBreak`, and `charIn('a-z')` / `charNotIn(',\n')` for
+  your own.
+- **Text is `text('…')`**, and a string given to any method (`oneOf('yes', 'no')`) is text too.
+- **Nest by starting another chain from `pattern`**: `pattern.optional(pattern.text('.').digits())`.
+- **`.as(name)` captures the step just before it.** `.group(…)` makes a chain one step, so
+  `.group(pattern.digits().text('.').digits()).as('version')` captures all of it.
+
+The full list is in [the vocabulary](docs-src/vocabulary.md).
+
+## Any regex, as code you can read
+
+`fromRegex()` turns a regex into a pattern where it can prove the two match the same, and
+`toCode()` writes any pattern as the chain that builds it. Together they explain an inherited
+regex, and replace it:
+
+```js
+import { fromRegex } from 'tosijs-pattern'
+import { show } from 'tosijs-pattern/demo'
+
+const version = fromRegex(/^v(?<major>\d+)\.(?<minor>\d+)$/)
+
+show(preview, version.toCode(), version.describe())
+```
+
+Where a regex only works by backtracking, it is refused with the reason and what to write
+instead. See [From regex](docs-src/from-regex.md).
 
 ## What regex cannot do
 
@@ -61,12 +93,12 @@ named pieces here.
 CSV, correctly (quoted fields, doubled quotes inside them, commas and line breaks inside quotes):
 
 ```js
-import { oneOf, quoted, optional, oneOrMore, charNotIn, capture, separatedBy } from 'tosijs-pattern'
+import { pattern } from 'tosijs-pattern'
 import { show } from 'tosijs-pattern/demo'
 
-const field = oneOf(quoted('"', { escape: 'double' }), optional(oneOrMore(charNotIn(',\n'))))
-const row = capture('fields', separatedBy(field, ','))
-const csv = capture('rows', separatedBy(row, '\n'))
+const field = pattern.oneOf(pattern.quoted('"', { escape: 'double' }), pattern.optional(pattern.charsNotIn(',\n')))
+const row = pattern.listOf(field, { separatedBy: ',' }).as('fields')
+const csv = pattern.listOf(row, { separatedBy: '\n' }).as('rows')
 
 show(preview, csv.parse('name,said\n"Ada","she said ""hi"", then left"').captures)
 ```
@@ -75,13 +107,10 @@ A function call's arguments, nested and quote-aware. No regex can match this, be
 delimiters are not a regular language:
 
 ```js
-import { sequence, capture, oneOrMore, wordChar, balanced } from 'tosijs-pattern'
+import { pattern } from 'tosijs-pattern'
 import { show } from 'tosijs-pattern/demo'
 
-const call = sequence(
-  capture('fn', oneOrMore(wordChar)),
-  capture('args', balanced('(', ')', { quotes: '"\'' }))
-)
+const call = pattern.wordChars().as('fn').balanced('(', ')', { quotes: '"\'' }).as('args')
 
 show(preview, call.find('x = f(a, g(b), ")") + 1').captures)
 ```
@@ -89,10 +118,10 @@ show(preview, call.find('x = f(a, g(b), ")") + 1').captures)
 ## Search and replace
 
 ```js
-import { sequence, capture, number } from 'tosijs-pattern'
+import { pattern } from 'tosijs-pattern'
 import { show } from 'tosijs-pattern/demo'
 
-const dollars = sequence('$', capture('amount', number))
+const dollars = pattern.text('$').number().as('amount')
 
 show(
   preview,
@@ -115,7 +144,7 @@ where).
   `oneOf` takes the first option that matches. So a pattern's cost is visible from its shape,
   and there is no catastrophic case: the exponential blow-ups behind regex denial of service
   (ReDoS) cannot happen. The difference shows in exactly one place, and it is a feature:
-  `sequence(oneOrMore(digit), '5')` does not match `"1235"`, because the digits took the 5.
+  `pattern.digits().text('5')` does not match `"1235"`, because the digits took the 5.
   A regex finds that match only by retrying; here, a pattern that would need retrying is one
   that has not said what it means.
 - **A step budget.** Every call counts its work and stops at `maxSteps`

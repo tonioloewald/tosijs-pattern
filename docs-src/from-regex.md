@@ -19,10 +19,11 @@ try {
 } catch (e) {
   refusal = `${e.code}: ${e.message}`
 }
-show(preview, version.describe(), version.parse('v2.13').captures, refusal)
+show(preview, version.toCode(), version.describe(), version.parse('v2.13').captures, refusal)
 ```
 
-A translation has the regex's SEARCH semantics (`find`, `findAll`, `replaceAll`, …). Unnamed
+`toCode()` writes the translation as the chain that builds it, so a regex comes back as code
+you can read, paste, and keep. A translation has the regex's SEARCH semantics (`find`, `findAll`, `replaceAll`, …). Unnamed
 groups capture as `$1`, `$2`; named groups by name. A refusal is a `RegexRefusal` with a stable
 `code`, the offset `at` in the source, and a `suggestion`. Pattern reads code points, so a regex
 WITHOUT the `u` flag (which reads UTF-16 units) can differ on characters beyond the BMP, and
@@ -39,7 +40,7 @@ Pattern piece to use instead.
 Regex backtracks; Pattern does not. Syntax maps one-to-one, but the meaning only matches when the
 backtracking could never have changed the outcome:
 
-- `\d+5` on `"1235"`: the regex gives back the 5 and matches; `sequence(oneOrMore(digit), '5')`
+- `\d+5` on `"1235"`: the regex gives back the 5 and matches; `pattern.digits().text('5')`
   does not.
 - `a|ab` followed by `c`, on `"abc"`: the regex tries `ab` after `a` fails later; `oneOf('a',
   'ab')` does not.
@@ -55,9 +56,9 @@ and refuses when it cannot. The proof is a local check:
    which the translator can reorder only when that is provably equivalent).
 3. Where the check fails, the translator looks for the STRUCTURE the backtracking was standing
    in for, and names it:
-   - `.*?X` and `.*X` before a literal become `until(X)`.
-   - `"(?:[^"\\]|\\.)*"` becomes `quoted('"', { escape: '\\' })`.
-   - `[^,]*(?:,[^,]*)*` becomes `separatedBy(…, ',')`.
+   - `.*?X` and `.*X` before a literal become `.until(X)`.
+   - `"(?:[^"\\]|\\.)*"` becomes `.quoted('"', { escape: '\\' })`.
+   - `[^,]*(?:,[^,]*)*` becomes `.listOf(…, { separatedBy: ',' })`.
 4. Anything else is refused: "`\d+5`: the repetition can consume what follows it, so this regex
    only matches by retrying. Say where the digits stop: …".
 
@@ -65,13 +66,13 @@ and refuses when it cannot. The proof is a local check:
 
 | Regex | Pattern | Notes |
 | --- | --- | --- |
-| `(?=x)`, `(?!x)` | `followedBy`, `notFollowedBy` | direct |
+| `(?=x)`, `(?!x)` | `ifFollowedBy`, `ifNotFollowedBy` | direct |
 | `(?<=x)`, `(?<!x)` | refused | 0.5% of regexes in our census; a lookbehind usually stands in for a capture |
 | `\1`, `\k<n>` | refused | backreferences are memory, not matching; 3% |
 | lazy `*?`, `+?` | `until(…)` when followed by a literal, else refused | 7% |
-| `i` flag | `caseless` / both-case ranges | |
+| `i` flag | `anyCase` / both-case ranges | |
 | `m` flag | `lineStart` / `lineEnd` | |
-| `s` flag | `anyChar`; without it, `.` is `charNotIn` the line terminators | |
+| `s` flag | `anyChar()`; without it, `.` is `charNotIn` the line terminators | |
 | `g` flag | the operation (`findAll`, `replaceAll`) | |
 | `y` flag | `find` at a position | |
 | `u` flag | always on: code points | |

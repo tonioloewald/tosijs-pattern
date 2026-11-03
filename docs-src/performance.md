@@ -28,9 +28,9 @@ runs after warm-up). Re-measure before quoting; numbers without a date are not n
 Read from the engine, in rough order of payoff. Together, 5 to 10 times is a reasonable
 expectation, which would put Pattern at roughly 5 to 20 times native.
 
-1. **Values are computed eagerly.** Every `sequence`, repetition and character match slices the
+1. **Values are computed eagerly.** Every sequence, repetition and character match slices the
    text it matched, on every call, whether or not anything captures it. Compute values only on
-   the path to a `capture` (or compute them lazily from start and end).
+   the path to a capture (or compute them lazily from start and end).
 2. **A result object per node visit.** `match` returns `{ end, caps, value }` for every node.
    Return the end position as a number, and keep captures on a stack in the context that a
    failed branch unwinds.
@@ -40,7 +40,7 @@ expectation, which would put Pattern at roughly 5 to 20 times native.
 4. **The tree is interpreted on every call.** Compile each pattern once into nested closures
    (each node a function of the position), so the per-node `switch` disappears. No code
    generation from strings, so it stays CSP-safe.
-5. **Literal runs and character runs.** `oneOrMore(charIn(…))` can scan with a tight loop over
+5. **Literal runs and character runs.** `charsIn(…)` can scan with a tight loop over
    a precomputed lookup table for ASCII, and literal sequences can be merged into one
    `startsWith`.
 
@@ -56,14 +56,14 @@ must not touch the host engine). It is also how people could take a readable pat
 regex for a tool that only accepts regex.
 
 The subtlety is that a native regex BACKTRACKS and a pattern does not, so a naive translation
-(`oneOrMore(digit)` → `\d+`) would both change the meaning and reintroduce ReDoS. The emitted
+(`digits()` → `\d+`) would both change the meaning and reintroduce ReDoS. The emitted
 regex must be possessive and ordered too. JavaScript regex has no possessive quantifiers or
 atomic groups, but a lookahead is atomic, and a backreference re-reads what it captured, so
 `(?=(X))\1` matches X atomically:
 
 | Pattern | Emitted regex |
 | --- | --- |
-| `oneOrMore(digit)` | `(?=(\d+))\1` (takes all the digits, never gives one back) |
+| `digits()` | `(?=(\d+))\1` (takes all the digits, never gives one back) |
 | `oneOf('a', 'ab')` | `(?=(a\|ab))\1` (the first that matches, never retried) |
 
 Every repetition and every choice is wrapped this way, so the emitted regex cannot backtrack into
