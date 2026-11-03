@@ -8,3 +8,6 @@ coverage
 docs
 demo/docs.json
 /.practices/
+
+# Local dev TLS (bunx tosijs-dev-certs): a private key, never commit
+tls/
