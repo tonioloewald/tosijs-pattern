@@ -541,7 +541,8 @@ export class Pattern {
         texts: hit.texts ?? {},
         value: hit.value,
       })
-      at = hit.end > at ? hit.end : nextStart(input, at)
+      // An empty match is not found twice: the next try starts past it (after a skip too).
+      at = hit.end > (hit.start ?? at) ? hit.end : nextStart(input, hit.end)
     }
     return out
   }

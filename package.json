@@ -16,6 +16,10 @@
   },
   "sideEffects": false,
   "license": "MIT",
+  "homepage": "https://pattern.tosijs.net",
+  "bugs": {
+    "url": "https://github.com/tonioloewald/tosijs-pattern/issues"
+  },
   "keywords": [
     "pattern",
     "regex",

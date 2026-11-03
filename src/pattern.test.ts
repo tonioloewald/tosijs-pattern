@@ -457,6 +457,16 @@ group('startAt / startAfter: where the match begins', () => {
       expect(perChar(make(24_000))).toBeLessThan(perChar(make(1_200)) * 1.5 + 1)
   })
 
+  it('an empty match after a skip is found once, not twice', () => {
+    expect(pattern.startAt('x').findAll('abcdx').map((m) => [m.start, m.end])).toEqual([[4, 4]])
+    expect(pattern.startAt('x').replaceAll('abxdx', '!')).toBe('ab!xd!x')
+  })
+
+  it('a skip inside a labelled chain still gives the matched text as the value', () => {
+    const m = pattern.startAfter('x').digits().describedAs('d').text('y').find('aax12y')
+    expect([m?.text, m?.value]).toEqual(['12y', '12y'])
+  })
+
   it('toCode writes it back', () => {
     expect(pattern.startAfter(pattern.lineBreak()).lines().toCode()).toBe('pattern.startAfter(pattern.lineBreak()).lines()')
     expect(pattern.startAt('# ').restOfLine().toCode()).toBe("pattern.startAt('# ').restOfLine()")

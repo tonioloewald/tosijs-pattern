@@ -190,7 +190,7 @@ export function match(node: Node, ctx: Context, pos: number): Hit | null {
       }
       if (start === undefined) return { end: at, caps, texts, value: input.slice(pos, at) }
       // After a skip, the match is what follows it: one step's own value, or the text.
-      const value = node.items.length === 2 ? last!.value : input.slice(start, at)
+      const value = node.items.length === 2 && node.items[0]!.kind === 'startAt' ? last!.value : input.slice(start, at)
       return { start, end: at, caps, texts, value }
     }
     case 'oneOf': {
