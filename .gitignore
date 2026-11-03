@@ -11,3 +11,4 @@ demo/docs.json
 
 # Local dev TLS (bunx tosijs-dev-certs): a private key, never commit
 tls/
+docs.last-good
