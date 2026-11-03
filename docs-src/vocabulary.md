@@ -22,7 +22,8 @@ show(preview, {
 Everything starts from `pattern`, the empty pattern. Each method returns a NEW pattern with
 one more step, so a chain reads in the order it matches, and a pattern is a value you can name
 and reuse (`identifier` above). A method's argument is a string (literal text) or another chain
-started from `pattern`.
+started from `pattern`. In the tables below, `p` stands for such an argument (and, in the
+Regex column, for the regex it would be).
 
 ## Nouns: characters
 
@@ -68,7 +69,7 @@ next character literal. There are no class escapes inside it: name the noun inst
 
 | Method | Matches | Regex |
 | --- | --- | --- |
-| `oneOf(a, b, …)` | the FIRST that matches | `a\|b` |
+| `oneOf('yes', 'no', …)` | the FIRST option that matches; an option is text or a chain, `oneOf('-', pattern.digits())` | `yes\|no\|…` |
 | `optional(p)` | `p` or nothing | `p?` |
 | `oneOrMore(p)`, `zeroOrMore(p)` | as many as match | `p+`, `p*` |
 | `repeat(p, n)`, `repeat(p, min, max)` | exactly n, or min to max (`Infinity`: no limit) | `p{n}`, `p{m,n}` |
