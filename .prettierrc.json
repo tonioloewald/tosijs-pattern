@@ -1,0 +1,12 @@
+{
+  "semi": false,
+  "singleQuote": true,
+  "printWidth": 120,
+  "trailingComma": "es5",
+  "overrides": [
+    {
+      "files": ["*.md", "*.markdown", "*.mdx"],
+      "options": { "requirePragma": true }
+    }
+  ]
+}
