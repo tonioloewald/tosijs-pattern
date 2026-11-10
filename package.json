@@ -57,11 +57,11 @@
     "acorn-walk": "^8.3.5",
     "chokidar": "^4.0.3",
     "happy-dom": "^21.0.4",
-    "marked": "^18.0.0",
+    "marked": "^18.2.0",
     "tjs-lang": "0.14.0-rc.10",
     "tosijs": "^1.10.10",
     "tosijs-schema": "^1.14.0",
-    "tosijs-ui": "^1.16.41",
+    "tosijs-ui": "^1.17.5",
     "typescript": "^5"
   },
   "releaseDoctor": {

@@ -1,18 +1,15 @@
-# tosijs-pattern v0.1.0
+# tosijs-pattern
 
-Matching that reads like what it means: a fluent, declarative alternative to regular expressions.
+> Matching that reads like what it means: a fluent, declarative alternative to regular expressions.
+
+Version 0.1.0.
 
 - Docs: https://pattern.tosijs.net
 - Source: https://github.com/tonioloewald/tosijs-pattern
 - npm: https://www.npmjs.com/package/tosijs-pattern
 
-## Documentation
-
-Full documentation, with live code examples, is at the links below.
-
-Pages below are also available as plain markdown: append `index.md` to the URL
-(for example `/guide/index.md`).
-Prefer that if you only need the text. A page marked noindex has no markdown copy.
+Each link below is the page's markdown. Drop `index.md` from it for the HTML page, where the examples run.
+The whole corpus, as one markdown file: https://pattern.tosijs.net/llms-full.txt
 
 Live examples run inline on the shared page by default (not sandboxed):
 each has its own `preview` element, but they share one tosijs module, so
@@ -21,19 +18,18 @@ deliberate (it shows tosi isolation and lets you drive demos via the global
 singleton). Namespace example state with unique top-level keys so examples
 don't clobber each other; the `iframe` attribute isolates DOM/CSS, not state.
 
-## Pages
+## Docs
 
-- https://pattern.tosijs.net/formal/ — A formal specification in Lean 4
-  A proposed Lean 4 specification of Pattern: the properties worth proving, and how the TypeScript engine is tested against it.
-- https://pattern.tosijs.net/design/ — Design
-  Why tosijs-pattern works the way it does: its speed, and the plan for a formal specification.
-- https://pattern.tosijs.net/from-regex/ — From regex
-  fromRegex(): translate a regex into an equivalent pattern where that is provable, or refuse it with the reason. With the numbers over real code.
-- https://pattern.tosijs.net/guide/ — Guide
-  Using tosijs-pattern: the vocabulary, and turning existing regexes into patterns.
-- https://pattern.tosijs.net/performance/ — Performance
-  How fast tosijs-pattern is against native regex and a linear regex engine, why, and the plan to close the gap.
-- https://pattern.tosijs.net/ — tosijs-pattern
-  Matching that reads like what it means: a fluent, declarative alternative to regular expressions, with no backtracking and a step budget.
-- https://pattern.tosijs.net/vocabulary/ — Vocabulary
-  Every noun and verb in tosijs-pattern, what each matches, and the values and captures a pattern gives back.
+- [tosijs-pattern](https://pattern.tosijs.net/index.md): Matching that reads like what it means: a fluent, declarative alternative to regular expressions, with no backtracking and a step budget.
+
+## Guide
+
+- [Guide](https://pattern.tosijs.net/guide/index.md): Using tosijs-pattern: the vocabulary, and turning existing regexes into patterns.
+- [Vocabulary](https://pattern.tosijs.net/vocabulary/index.md): Every noun and verb in tosijs-pattern, what each matches, and the values and captures a pattern gives back.
+- [From regex](https://pattern.tosijs.net/from-regex/index.md): fromRegex(): translate a regex into an equivalent pattern where that is provable, or refuse it with the reason. With the numbers over real code.
+
+## Design
+
+- [Design](https://pattern.tosijs.net/design/index.md): Why tosijs-pattern works the way it does: its speed, and the plan for a formal specification.
+- [Performance](https://pattern.tosijs.net/performance/index.md): How fast tosijs-pattern is against native regex and a linear regex engine, why, and the plan to close the gap.
+- [A formal specification in Lean 4](https://pattern.tosijs.net/formal/index.md): A proposed Lean 4 specification of Pattern: the properties worth proving, and how the TypeScript engine is tested against it.
